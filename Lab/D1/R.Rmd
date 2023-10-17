@@ -1,0 +1,80 @@
+
+```{r}
+bmw <- read.csv("bmw.csv")
+```
+### Factors
+
+In order to work properly with categorical variables we need to tell R that they are factors. We can check the object type with `class()`:
+```{r}
+summary (bmw)
+```
+
+```{r}
+class(bmw$model)
+class(bmw$year)
+class(bmw$price)
+class(bmw$transmission)
+class(bmw$mileage)
+class(bmw$fuelType)
+class(bmw$tax)
+class(bmw$mpg)
+class(bmw$engineSize)
+```
+
+
+We can transform variables into factors with `as.factor`:
+
+mpg:
+```{r}
+breaksmpg <- c(-Inf,  121.825,  238.15, 354.475, Inf)
+labelsmpg <- c("very_inefficient", "efficient", "inefficient", "very_efficient")
+new_mpg <- cut(bmw$mpg, breaks = breaksmpg, labels = labelsmpg)
+summary(new_mpg)
+plot(new_mpg, main="MPG Grouped Histogram",  col = rainbow(4))
+```
+
+engineSize:
+```{r}
+breaksengineSize <- c(-Inf, 1.99999999, 2.168, Inf)
+labelsengineSize <- c("small", "normal", "big")
+new_engineSize <- cut(bmw$engineSize, breaks = breaksengineSize, labels = labelsengineSize)
+summary(new_engineSize)
+plot(new_engineSize, main="Engine Size Grouped Histogram",  col = rainbow(4))
+```
+
+year:
+```{r}
+breaksyear <- c(-Inf, 2002, 2008, 2014, Inf)
+labelsyear <- c("very_old", "old", "new", "very_new")
+new_year <- cut(as.numeric(bmw$year), breaks = breaksyear, labels = labelsyear)
+factoryear <- as.factor(new_year)
+summary(new_year)
+plot(new_year, main="Years Grouped Histogram",  col = rainbow(4))
+```
+
+price:
+```{r}
+breaksprice <- c(-Inf, 31764, 62328, 92892, Inf)
+labelsprice <- c("very_cheap", "cheap", "expensive", "very_expensive")
+new_price <- cut(as.numeric(bmw$price), breaks = breaksprice, labels = labelsprice)
+summary(new_price)
+plot(new_price, main="Price Grouped Histogram" ,col = rainbow(4))
+```
+
+mileage:
+```{r}
+breaksmileage <- c(-Inf, 53500.75, 107000.5, 160500.25, Inf)
+labelsmileage <- c("very_used", "used", "shortly_used", "almost_new")
+new_mileage <- cut(as.numeric(bmw$mileage), breaks = breaksmileage, labels = labelsmileage)
+summary(new_mileage)
+plot(new_mileage, main="Mileage Grouped Histogram",  col = rainbow(4))
+```
+
+tax:
+```{r}
+breakstax <- c(-Inf, 145, 290, 435, Inf)
+labelstax <- c("very_low", "low", "high", "very_high")
+new_tax <- cut(as.numeric(bmw$tax), breaks = breakstax, labels = labelstax)
+summary(new_tax)
+plot(new_tax, main="Tax Grouped Histogram",  col = rainbow(4))
+```
