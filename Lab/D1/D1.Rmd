@@ -1,0 +1,89 @@
+The data for the project comes in a csv file:
+
+```{r Read data}
+bmw <- read.csv("bmw.csv")
+```
+
+Once we have our data read, we can save it as an RData file, which will be very easy to save and load:
+
+```{r Save data}
+save(bmw, file = "bmw.RData")
+```
+
+If we want to load it, we only need to use `load`:
+
+```{r Load data}
+load("bmw.RData")
+```
+
+We can transform variables into factors with `as.factor`:
+
+```{r}
+factormpg <- as.factor(bmw$mpg)
+testVar <- as.factor(bmw$transmission)
+summary(testVar)
+```
+```{r}
+as.factor(bmw$mpg)
+```
+
+Price Histogram
+
+```{r}
+hist(bmw$price, main="Price Histogram", xlab="Price", col="skyblue", border="black")
+```
+Transmission Barplot
+
+```{r}
+barplot(table(bmw$transmission), main="Barplot of Transmission Types", xlab="Transmission Type", ylab="Frequency", col=c("skyblue", "lightpink"), border="black")
+
+```
+Barplot of Fuel Types
+
+```{r}
+barplot(table(bmw$fuelType), main="Barplot of Fuel Types", xlab="Fuel Type", ylab="Frequency", col=c("skyblue", "lightpink", "lightgreen"), border="black")
+```
+MPG Histogram
+
+```{r}
+hist(bmw$mpg, main="MPG Histogram", xlab="MPG", col="skyblue", border="black")
+```
+Mileage Histogram
+
+```{r}
+hist(bmw$mileage, main="Mileage Histogram", xlab="Mileage", col="lightgreen", border="black")
+```
+Model Barplot
+
+```{r}
+barplot(table(bmw$model), main="Barplot of BMW Models", xlab="Model", ylab="Frequency", col=rainbow(length(table(bmw$model))), border="black")
+```
+Year Barplot
+
+```{r}
+barplot(table(bmw$year), main="Barplot of Year", xlab="Year", ylab="Frequency", col=rainbow(length(table(bmw$year))), border="black")
+```
+Tax Histogram
+
+```{r}
+hist(bmw$tax, main="Tax Histogram", xlab = "Tax", col = "lightyellow", border = "black")
+```
+Engine Size Histogram
+
+```{r}
+hist(bmw$engineSize, main="Engine Size Histogram", xlab = "Engine Size", col = "lightcoral", border = "black")
+```
+```{r}
+summary(bmw)
+```
+
+Engine Size Histogram
+
+```{r}
+hist(bmw$engineSize, main="Engine Size Histogram", xlab = "Engine Size", col = "lightcoral", border = "black")
+```
+#engineSize
+factorModel <- as.factor(bmw$model)
+summary(factorModel)
+plot(factorModel,  col = rainbow(4)) 
+
