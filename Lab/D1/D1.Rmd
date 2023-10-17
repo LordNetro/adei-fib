@@ -182,3 +182,29 @@ ierrs
 jerrs
 
 ```
+
+# Outlier detection and elimination
+```{r}
+boxplot(bmwVariables$price, main="Boxplot of Price", ylab="Price")
+var_outPrice<-calcQ(bmwVariables$price)
+summary(bmwVariables$price)
+abline(h=var_outPrice$souts,col="red")
+abline(h=var_outPrice$souti,col="red")
+
+lloutPrice<-which((bmwVariables$price<var_outPrice$souti)|(bmwVariables$price>var_outPrice$souts))
+iouts[lloutPrice]<-iouts[lloutPrice]+1
+jouts[1]<-length(lloutPrice)
+
+boxplot(bmwVariables$engineSize, main="Boxplot of Engine Size", ylab="Engine Size")
+var_outEngine<-calcQ(bmwVariables$engineSize)
+summary(bmwVariables$engineSize)
+abline(h=var_outEngine$souts,col="red")
+abline(h=var_outEngine$souti,col="red")
+
+lloutEngine<-which((bmwVariables$price<var_outEngine$souti)|(bmwVariables$price>var_outEngine$souts))
+iouts[lloutEngine]<-iouts[lloutEngine]+1
+jouts[2]<-length(lloutEngine)
+
+jouts
+#df[llout,"engineSize"]<-NA 
+```
