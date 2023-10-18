@@ -1,100 +1,213 @@
-#The data for the project comes in a csv file:
-
+# Lecture of DataFrames:
 ```{r Read data}
-bmw <- read.csv("bmw.csv")
+df1 <- read.table("audi.csv",header=T, sep=",")
+df1$manufacturer <- "Audi"
+df2 <- read.table("bmw.csv",header=T, sep=",")
+df2$manufacturer <- "BMW"
+df3 <- read.table("merc.csv",header=T, sep=",")
+df3$manufacturer <- "Mercedes"
+df4 <- read.table("vw.csv",header=T, sep=",")
+df4$manufacturer <- "VW"
+
+# Union by row:
+df <- rbind(df1,df2,df3,df4)
+dim(df)  # Size of data.frame
+str(df) # Object class and description
+names(df) # List of variable names
+
+# Use birthday of 1 member of the group
+set.seed(15042002)
+
+# Random selection of x registers:
+sam<-as.vector(sort(sample(1:nrow(df),5000)))
+head(df)  # Take a look to the first rows/instances
+df<-df[sam,]  # Subset of rows _ My sample
+summary(df)
+
+# Keep information in an .Rdata file:
+
+save(list=c("df"),file="Cars.RData")
+```
+```{r}
+summary (df)
 ```
 
-#Once we have our data read, we can save it as an RData file, which will be very easy to save and load:
-
-```{r Save data}
-save(bmw, file = "bmw.RData")
+#Let's see the classes of the variables
+```{r}
+class(df$model)
+class(df$year)
+class(df$price)
+class(df$transmission)
+class(df$mileage)
+class(df$fuelType)
+class(df$tax)
+class(df$mpg)
+class(df$engineSize)
+class(df$manufacturer)
 ```
 
 #If we want to load it, we only need to use `load`:
 
 ```{r Load data}
-load("bmw.RData")
+load("Cars.RData")
 ```
 
 #We can transform variables into factors with `as.factor`:
 
 ```{r}
-factormpg <- as.factor(bmw$mpg)
-testVar <- as.factor(bmw$transmission)
+factormpg <- as.factor(df$mpg)
+testVar <- as.factor(df$transmission)
 summary(testVar)
 ```
 ```{r}
-as.factor(bmw$mpg)
+as.factor(df$mpg)
 ```
 
 #Price Histogram
 
 ```{r}
-hist(bmw$price, main="Price Histogram", xlab="Price", col="skyblue", border="black")
+hist(df$price, main="Price Histogram", xlab="Price", col="skyblue", border="black")
 ```
 #Transmission Barplot
 
 ```{r}
-barplot(table(bmw$transmission), main="Barplot of Transmission Types", xlab="Transmission Type", ylab="Frequency", col=c("skyblue", "lightpink"), border="black")
+barplot(table(df$transmission), main="Barplot of Transmission Types", xlab="Transmission Type", ylab="Frequency", col=c("skyblue", "lightpink"), border="black")
 
 ```
 #Barplot of Fuel Types
 
 ```{r}
-barplot(table(bmw$fuelType), main="Barplot of Fuel Types", xlab="Fuel Type", ylab="Frequency", col=c("skyblue", "lightpink", "lightgreen"), border="black")
+barplot(table(df$fuelType), main="Barplot of Fuel Types", xlab="Fuel Type", ylab="Frequency", col=c("skyblue", "lightpink", "lightgreen"), border="black")
 ```
 #MPG Histogram
 
 ```{r}
-hist(bmw$mpg, main="MPG Histogram", xlab="MPG", col="skyblue", border="black")
+hist(df$mpg, main="MPG Histogram", xlab="MPG", col="skyblue", border="black")
 ```
 #Mileage Histogram
 
 ```{r}
-hist(bmw$mileage, main="Mileage Histogram", xlab="Mileage", col="lightgreen", border="black")
+hist(df$mileage, main="Mileage Histogram", xlab="Mileage", col="lightgreen", border="black")
 ```
 #Model Barplot
 
 ```{r}
-barplot(table(bmw$model), main="Barplot of BMW Models", xlab="Model", ylab="Frequency", col=rainbow(length(table(bmw$model))), border="black")
+barplot(table(df$model), main="Barplot of df Models", xlab="Model", ylab="Frequency", col=rainbow(length(table(df$model))), border="black")
+```
+
+#Manufacturer Barplot
+
+```{r}
+barplot(table(df$manufacturer), main="Barplot of df Manufacturers", xlab="Manufacturers", ylab="Frequency", col=rainbow(length(table(df$manufacturer))), border="black")
 ```
 #Year Barplot
 
 ```{r}
-barplot(table(bmw$year), main="Barplot of Year", xlab="Year", ylab="Frequency", col=rainbow(length(table(bmw$year))), border="black")
+barplot(table(df$year), main="Barplot of Year", xlab="Year", ylab="Frequency", col=rainbow(length(table(df$year))), border="black")
 ```
 #Tax Histogram
 
 ```{r}
-hist(bmw$tax, main="Tax Histogram", xlab = "Tax", col = "lightyellow", border = "black")
+hist(df$tax, main="Tax Histogram", xlab = "Tax", col = "lightyellow", border = "black")
 ```
 #Engine Size Histogram
 
 ```{r}
-hist(bmw$engineSize, main="Engine Size Histogram", xlab = "Engine Size", col = "lightcoral", border = "black")
+hist(df$engineSize, main="Engine Size Histogram", xlab = "Engine Size", col = "lightcoral", border = "black")
 ```
 ```{r}
-summary(bmw)
+summary(df)
+```
+
+#We can transform variables into factors with `as.factor`:
+
+#mpg:
+```{r}
+breaksmpg <- c(-Inf,  118.525,  235.95, 353.375, Inf)
+labelsmpg <- c("very_inefficient", "inefficient", "efficient", "very_efficient")
+new_mpg <- cut(df$mpg, breaks = breaksmpg, labels = labelsmpg)
+summary(new_mpg)
+plot(new_mpg, main="MPG Grouped Histogram",  col = rainbow(4))
+```
+
+#engineSize:
+```{r}
+breaksengineSize <- c(-Inf, 2.067, 4.13, Inf)
+labelsengineSize <- c("small", "normal", "big")
+new_engineSize <- cut(df$engineSize, breaks = breaksengineSize, labels = labelsengineSize)
+summary(new_engineSize)
+plot(new_engineSize, main="Engine Size Grouped Histogram",  col = rainbow(4))
+```
+
+#year:
+```{r}
+breaksyear <- c(-Inf, 2002.75, 2008.5, 2014.25, Inf)
+labelsyear <- c("very_old", "old", "new", "very_new")
+new_year <- cut(as.numeric(df$year), breaks = breaksyear, labels = labelsyear)
+factoryear <- as.factor(new_year)
+summary(new_year)
+plot(new_year, main="Years Grouped Histogram",  col = rainbow(4))
+```
+
+#price:
+```{r}
+breaksprice <- c(-Inf, 35273.5, 68557, 101840.5, Inf)
+labelsprice <- c("very_cheap", "cheap", "expensive", "very_expensive")
+new_price <- cut(as.numeric(df$price), breaks = breaksprice, labels = labelsprice)
+summary(new_price)
+plot(new_price, main="Price Grouped Histogram" ,col = rainbow(4))
+```
+
+#mileage:
+```{r}
+breaksmileage <- c(-Inf, 64750.75, 129500.5, 194250.25, Inf)
+labelsmileage <- c("very_used", "used", "shortly_used", "almost_new")
+new_mileage <- cut(as.numeric(df$mileage), breaks = breaksmileage, labels = labelsmileage)
+summary(new_mileage)
+plot(new_mileage, main="Mileage Grouped Histogram",  col = rainbow(4))
+```
+
+#tax:
+```{r}
+breakstax <- c(-Inf, 145, 290, 435, Inf)
+labelstax <- c("very_low", "low", "high", "very_high")
+new_tax <- cut(as.numeric(df$tax), breaks = breakstax, labels = labelstax)
+summary(new_tax)
+plot(new_tax, main="Tax Grouped Histogram",  col = rainbow(4))
 ```
 
 #Engine Size Histogram
 
 ```{r}
-hist(bmw$engineSize, main="Engine Size Histogram", xlab = "Engine Size", col = "lightcoral", border = "black")
+hist(df$engineSize, main="Engine Size Histogram", xlab = "Engine Size", col = "lightcoral", border = "black")
 ```
 #Factorized Model Histogram
 
 ```{r}
-factorModel <- as.factor(bmw$model)
+factorModel <- as.factor(df$model)
 summary(factorModel)
-plot(factorModel, main="Factorized Engine Size Histogram",  col = rainbow(24))
+plot(factorModel, main="Factorized Model Histogram",  col = rainbow(24))
 ```
 #Factorized Fuel Type Histogram
 
 ```{r}
-factorModel <- as.factor(bmw$model)
-summary(factorModel)
-plot(factorModel, main="Factorized Engine Size Histogram",  col = rainbow(24))
+factorFuelType <- as.factor(df$fuelType)
+summary(factorFuelType)
+#plot(factorFuelType, main="Factorized Fuel Type Histogram",  col = rainbow(24))
+```
+#Factorized Transmission Histogram
+
+```{r}
+factorTransmission <- as.factor(df$transmission)
+summary(factorTransmission)
+#plot(factorTransmission, main="Factorized Fuel Type Histogram",  col = rainbow(24))
+```
+#Factorized Manufactorer Histogram
+
+```{r}
+factorManufactorer <- as.factor(df$manufacturer)
+summary(factorManufactorer)
+#plot(factorTransmission, main="Factorized Fuel Type Histogram",  col = rainbow(24))
 ```
 
 ## Some useful functions
@@ -131,53 +244,53 @@ countX <- function(x,X) {
 # Initialization of counts for missings, outliers and errors. All numerical variables have to be checked before and processing of outliers and errors
 ```{r}
 
-bmwVariables <- data.frame(price = bmw$price, engineSize = bmw$engineSize)
+dfVariables <- data.frame(price = df$price, engineSize = df$engineSize)
 
 
 #######################################################
-imis<-rep(0,nrow(bmwVariables))  # rows - trips
-jmis<-rep(0,ncol(bmwVariables))  # columns - variables
+imis<-rep(0,nrow(dfVariables))  # rows - trips
+jmis<-rep(0,ncol(dfVariables))  # columns - variables
 ######################################################
-mis1<-countNA(bmwVariables)
+mis1<-countNA(dfVariables)
 imis<-mis1$mis_ind
 mis1$mis_col # Number of missings for the current set of variables
 
 #######################################################
-iouts<-rep(0,nrow(bmwVariables))  # rows - trips
-jouts<-rep(0,ncol(bmwVariables))  # columns - variables
+iouts<-rep(0,nrow(dfVariables))  # rows - trips
+jouts<-rep(0,ncol(dfVariables))  # columns - variables
 ######################################################
 
 #######################################################
-ierrs<-rep(0,nrow(bmwVariables))  # rows - trips
-jerrs<-rep(0,ncol(bmwVariables))  # columns - variables
+ierrs<-rep(0,nrow(dfVariables))  # rows - trips
+jerrs<-rep(0,ncol(dfVariables))  # columns - variables
 ######################################################
 
-bmwVariables[which(bmwVariables[,"engineSize"]==0),]
+dfVariables[which(dfVariables[,"engineSize"]==0),]
 
 # EngineSize
 # It is a quantitive variable  Non-possible values will be recoded to NA
-selEngine<-which(bmwVariables$engineSize ==0)
+selEngine<-which(dfVariables$engineSize ==0)
 ierrs[selEngine]<-ierrs[selEngine]+1
 jerrs[2]<-length(selEngine)
 selEngine                 #### sel contains the rownames of the individuals with "0" 
 #                        as  value for engineSize
 # df[sel,"engineSize"]<-3    # non-possible values are replaced by NA, missing value symbol in R
-bmwVariables[selEngine,"engineSize"]<-NA
+dfVariables[selEngine,"engineSize"]<-NA
 selmissEngine <- selEngine
 
 # Price
 # It is a quantitive variable  Non-possible values will be recoded to NA
-selPrice<-which(bmwVariables$price <=0)
+selPrice<-which(dfVariables$price <=0)
 ierrs[selPrice]<-ierrs[selPrice]+1
 jerrs[1]<-length(selPrice)
 selPrice                 #### sel contains the rownames of the individuals with "0" 
 #                        as  value for engineSize
 # df[sel,"engineSize"]<-3    # non-possible values are replaced by NA, missing value symbol in R
-bmwVariables[selPrice,"price"]<-NA
+dfVariables[selPrice,"price"]<-NA
 selmissPrice <- selPrice
 
-summary(bmwVariables$engineSize)
-summary(bmwVariables$price)
+summary(dfVariables$engineSize)
+summary(dfVariables$price)
 ierrs
 jerrs
 
@@ -185,23 +298,23 @@ jerrs
 
 # Outlier detection and elimination
 ```{r}
-boxplot(bmwVariables$price, main="Boxplot of Price", ylab="Price")
-var_outPrice<-calcQ(bmwVariables$price)
-summary(bmwVariables$price)
+boxplot(dfVariables$price, main="Boxplot of Price", ylab="Price")
+var_outPrice<-calcQ(dfVariables$price)
+summary(dfVariables$price)
 abline(h=var_outPrice$souts,col="red")
 abline(h=var_outPrice$souti,col="red")
 
-lloutPrice<-which((bmwVariables$price<var_outPrice$souti)|(bmwVariables$price>var_outPrice$souts))
+lloutPrice<-which((dfVariables$price<var_outPrice$souti)|(dfVariables$price>var_outPrice$souts))
 iouts[lloutPrice]<-iouts[lloutPrice]+1
 jouts[1]<-length(lloutPrice)
 
-boxplot(bmwVariables$engineSize, main="Boxplot of Engine Size", ylab="Engine Size")
-var_outEngine<-calcQ(bmwVariables$engineSize)
-summary(bmwVariables$engineSize)
+boxplot(dfVariables$engineSize, main="Boxplot of Engine Size", ylab="Engine Size")
+var_outEngine<-calcQ(dfVariables$engineSize)
+summary(dfVariables$engineSize)
 abline(h=var_outEngine$souts,col="red")
 abline(h=var_outEngine$souti,col="red")
 
-lloutEngine<-which((bmwVariables$price<var_outEngine$souti)|(bmwVariables$price>var_outEngine$souts))
+lloutEngine<-which((dfVariables$price<var_outEngine$souti)|(dfVariables$price>var_outEngine$souts))
 iouts[lloutEngine]<-iouts[lloutEngine]+1
 jouts[2]<-length(lloutEngine)
 
