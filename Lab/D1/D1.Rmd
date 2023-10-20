@@ -313,6 +313,7 @@ selmissMPG <- selMPG
 summary(df)
 ierrs
 jerrs
+barplot(jerrs, main="Errors per Variable", col = rainbow(10))
 
 ```
 
@@ -325,7 +326,7 @@ abline(h=var_outPrice$souts,col="red")
 abline(h=var_outPrice$souti,col="red")
 
 lloutPrice<-which((df$price<var_outPrice$souti)|(df$price>var_outPrice$souts))
-df$price[lloutPrice, "price"]<-NA
+df$price[lloutPrice]<-NA
 iouts[lloutPrice]<-iouts[lloutPrice]+1
 jouts[3]<-length(lloutPrice)
 
@@ -336,7 +337,7 @@ abline(h=var_outEngine$souts,col="red")
 abline(h=var_outEngine$souti,col="red")
 
 lloutEngine<-which((df$engineSize<var_outEngine$souti)|(df$engineSize>var_outEngine$souts))
-df$engineSize[lloutEngine, "engineSize"]<-NA
+df$engineSize[lloutEngine]<-NA
 iouts[lloutEngine]<-iouts[lloutEngine]+1
 jouts[9]<-length(lloutEngine)
 
@@ -347,9 +348,20 @@ abline(h=var_outMileage$souts,col="red")
 abline(h=var_outMileage$souti,col="red")
 
 lloutMileage<-which((df$mileage<var_outMileage$souti)|(df$mileage>var_outMileage$souts))
-df$engineSize[lloutMileage, "engineSize"]<-NA
+df$mileage[lloutMileage]<-NA
 iouts[lloutMileage]<-iouts[lloutMileage]+1
-jouts[2]<-length(lloutMileage)
+jouts[5]<-length(lloutMileage)
+
+boxplot(df$mpg, main="Boxplot of MPG", ylab="MPG")
+var_outMPG<-calcQ(df$mpg)
+summary(df$mpg)
+abline(h=var_outMPG$souts,col="red")
+abline(h=var_outMPG$souti,col="red")
+
+lloutMPG<-which((df$mpg<var_outMPG$souti)|(df$mpg>var_outMPG$souts))
+df$mpg[lloutMPG]<-NA
+iouts[lloutMPG]<-iouts[lloutMPG]+1
+jouts[5]<-length(lloutMPG)
 
 jouts
 #df[llout,"engineSize"]<-NA 
