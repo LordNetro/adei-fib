@@ -253,6 +253,9 @@ jmis<-rep(0,ncol(df))  # columns - variables
 ######################################################
 mis1<-countNA(df)
 imis<-mis1$mis_ind
+numMissIndividuals<-which(imis>=0) #TODO
+numMissIndividuals
+barplot(as.numeric(numMissIndividuals), main = "Missings per Individual", col = rainbow(10))
 barplot(as.numeric(mis1$mis_col$mis_x), main = "Missings per variable", col = rainbow(10))
 
 #######################################################
@@ -312,6 +315,8 @@ selmissMPG <- selMPG
 
 summary(df)
 ierrs
+numErrorsIndividuals<-which(ierrs>0)
+numErrorsIndividuals
 jerrs
 barplot(jerrs, main="Errors per Variable", col = rainbow(10))
 
@@ -364,5 +369,5 @@ iouts[lloutMPG]<-iouts[lloutMPG]+1
 jouts[5]<-length(lloutMPG)
 
 jouts
-#df[llout,"engineSize"]<-NA 
+#df[llout,"engineSize"]<-NA
 ```
