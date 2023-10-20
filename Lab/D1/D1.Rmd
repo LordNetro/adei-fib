@@ -253,7 +253,7 @@ jmis<-rep(0,ncol(df))  # columns - variables
 ######################################################
 mis1<-countNA(df)
 imis<-mis1$mis_ind
-mis1$mis_col # Number of missings for the current set of variables
+barplot(as.numeric(mis1$mis_col$mis_x), main = "Missings per variable", col = rainbow(10))
 
 #######################################################
 iouts<-rep(0,nrow(df))  # rows - trips
@@ -273,8 +273,8 @@ jerrs<-rep(0,ncol(df))  # columns - variables
 selMileage<-which(df$mileage <= 0)
 ierrs[selMileage]<-ierrs[selMileage]+1
 jerrs[5]<-length(selMileage)
-selMileage                 #### sel contains the rownames of the individuals with "0" 
-#                        as  value for engineSize
+selMileage                 #### sel contains the rownames of the individuals with "0" or less 
+#                        as  value for mileage
 df[selMileage,"mileage"]<-NA
 selmissEngine <- selMileage
 
@@ -294,8 +294,8 @@ selmissEngine <- selEngine
 selPrice<-which(df$price <=0)
 ierrs[selPrice]<-ierrs[selPrice]+1
 jerrs[3]<-length(selPrice)
-selPrice                 #### sel contains the rownames of the individuals with "0" 
-#                        as  value for engineSize
+selPrice                 #### sel contains the rownames of the individuals with "0" or less
+#                        as  value for price
 df[selPrice,"price"]<-NA
 selmissPrice <- selPrice
 
@@ -304,8 +304,8 @@ selmissPrice <- selPrice
 selMPG<-which(df$mpg < 0)
 ierrs[selMPG]<-ierrs[selMPG]+1
 jerrs[8]<-length(selMPG)
-selMPG                 #### sel contains the rownames of the individuals with "0" 
-#                        as  value for engineSize
+selMPG                 #### sel contains the rownames of the individuals with less than "0"
+#                        as  value for MPG
 # df[sel,"engineSize"]<-3    # non-possible values are replaced by NA, missing value symbol in R
 df[selMPG,"mpg"]<-NA
 selmissMPG <- selMPG
