@@ -270,20 +270,19 @@ jerrs<-rep(0,ncol(df))  # columns - variables
 
 # Mileage
 # It is a quantitive variable  Non-possible values will be recoded to NA
-selMileage<-which(df$engineSize <= 0)
+selMileage<-which(df$mileage <= 0)
 ierrs[selMileage]<-ierrs[selMileage]+1
-jerrs[2]<-length(selMileage)
+jerrs[5]<-length(selMileage)
 selMileage                 #### sel contains the rownames of the individuals with "0" 
 #                        as  value for engineSize
-# df[sel,"engineSize"]<-3    # non-possible values are replaced by NA, missing value symbol in R
 df[selMileage,"mileage"]<-NA
 selmissEngine <- selMileage
 
 # EngineSize
 # It is a quantitive variable  Non-possible values will be recoded to NA
-selEngine<-which(df$engineSize ==0)
+selEngine<-which(df$engineSize <=0)
 ierrs[selEngine]<-ierrs[selEngine]+1
-jerrs[2]<-length(selEngine)
+jerrs[9]<-length(selEngine)
 selEngine                 #### sel contains the rownames of the individuals with "0" 
 #                        as  value for engineSize
 # df[sel,"engineSize"]<-3    # non-possible values are replaced by NA, missing value symbol in R
@@ -294,15 +293,24 @@ selmissEngine <- selEngine
 # It is a quantitive variable  Non-possible values will be recoded to NA
 selPrice<-which(df$price <=0)
 ierrs[selPrice]<-ierrs[selPrice]+1
-jerrs[1]<-length(selPrice)
+jerrs[3]<-length(selPrice)
 selPrice                 #### sel contains the rownames of the individuals with "0" 
 #                        as  value for engineSize
-# df[sel,"engineSize"]<-3    # non-possible values are replaced by NA, missing value symbol in R
 df[selPrice,"price"]<-NA
 selmissPrice <- selPrice
 
-summary(df$engineSize)
-summary(df$price)
+# MPG
+# It is a quantitive variable  Non-possible values will be recoded to NA
+selMPG<-which(df$mpg < 0)
+ierrs[selMPG]<-ierrs[selMPG]+1
+jerrs[8]<-length(selMPG)
+selMPG                 #### sel contains the rownames of the individuals with "0" 
+#                        as  value for engineSize
+# df[sel,"engineSize"]<-3    # non-possible values are replaced by NA, missing value symbol in R
+df[selMPG,"mpg"]<-NA
+selmissMPG <- selMPG
+
+summary(df)
 ierrs
 jerrs
 
@@ -319,7 +327,7 @@ abline(h=var_outPrice$souti,col="red")
 lloutPrice<-which((df$price<var_outPrice$souti)|(df$price>var_outPrice$souts))
 df$price[lloutPrice, "price"]<-NA
 iouts[lloutPrice]<-iouts[lloutPrice]+1
-jouts[1]<-length(lloutPrice)
+jouts[3]<-length(lloutPrice)
 
 boxplot(df$engineSize, main="Boxplot of Engine Size", ylab="Engine Size")
 var_outEngine<-calcQ(df$engineSize)
@@ -327,10 +335,21 @@ summary(df$engineSize)
 abline(h=var_outEngine$souts,col="red")
 abline(h=var_outEngine$souti,col="red")
 
-lloutEngine<-which((df$price<var_outEngine$souti)|(df$price>var_outEngine$souts))
+lloutEngine<-which((df$engineSize<var_outEngine$souti)|(df$engineSize>var_outEngine$souts))
 df$engineSize[lloutEngine, "engineSize"]<-NA
 iouts[lloutEngine]<-iouts[lloutEngine]+1
-jouts[2]<-length(lloutEngine)
+jouts[9]<-length(lloutEngine)
+
+boxplot(df$mileage, main="Boxplot of Mileage", ylab="Mileage")
+var_outMileage<-calcQ(df$mileage)
+summary(df$mileage)
+abline(h=var_outMileage$souts,col="red")
+abline(h=var_outMileage$souti,col="red")
+
+lloutMileage<-which((df$mileage<var_outMileage$souti)|(df$mileage>var_outMileage$souts))
+df$engineSize[lloutMileage, "engineSize"]<-NA
+iouts[lloutMileage]<-iouts[lloutMileage]+1
+jouts[2]<-length(lloutMileage)
 
 jouts
 #df[llout,"engineSize"]<-NA 
