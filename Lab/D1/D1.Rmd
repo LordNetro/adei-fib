@@ -248,49 +248,61 @@ dfVariables <- data.frame(price = df$price, engineSize = df$engineSize)
 
 
 #######################################################
-imis<-rep(0,nrow(dfVariables))  # rows - trips
-jmis<-rep(0,ncol(dfVariables))  # columns - variables
+imis<-rep(0,nrow(df))  # rows - trips
+jmis<-rep(0,ncol(df))  # columns - variables
 ######################################################
-mis1<-countNA(dfVariables)
+mis1<-countNA(df)
 imis<-mis1$mis_ind
 mis1$mis_col # Number of missings for the current set of variables
 
 #######################################################
-iouts<-rep(0,nrow(dfVariables))  # rows - trips
-jouts<-rep(0,ncol(dfVariables))  # columns - variables
+iouts<-rep(0,nrow(df))  # rows - trips
+jouts<-rep(0,ncol(df))  # columns - variables
 ######################################################
 
 #######################################################
-ierrs<-rep(0,nrow(dfVariables))  # rows - trips
-jerrs<-rep(0,ncol(dfVariables))  # columns - variables
+ierrs<-rep(0,nrow(df))  # rows - trips
+jerrs<-rep(0,ncol(df))  # columns - variables
 ######################################################
 
-dfVariables[which(dfVariables[,"engineSize"]==0),]
+#dfVariables <- subset(df, select = c(price, mileage, mpg, engineSize))
+
+
+# Mileage
+# It is a quantitive variable  Non-possible values will be recoded to NA
+selMileage<-which(df$engineSize <= 0)
+ierrs[selMileage]<-ierrs[selMileage]+1
+jerrs[2]<-length(selMileage)
+selMileage                 #### sel contains the rownames of the individuals with "0" 
+#                        as  value for engineSize
+# df[sel,"engineSize"]<-3    # non-possible values are replaced by NA, missing value symbol in R
+df[selMileage,"mileage"]<-NA
+selmissEngine <- selMileage
 
 # EngineSize
 # It is a quantitive variable  Non-possible values will be recoded to NA
-selEngine<-which(dfVariables$engineSize ==0)
+selEngine<-which(df$engineSize ==0)
 ierrs[selEngine]<-ierrs[selEngine]+1
 jerrs[2]<-length(selEngine)
 selEngine                 #### sel contains the rownames of the individuals with "0" 
 #                        as  value for engineSize
 # df[sel,"engineSize"]<-3    # non-possible values are replaced by NA, missing value symbol in R
-dfVariables[selEngine,"engineSize"]<-NA
+df[selEngine,"engineSize"]<-NA
 selmissEngine <- selEngine
 
 # Price
 # It is a quantitive variable  Non-possible values will be recoded to NA
-selPrice<-which(dfVariables$price <=0)
+selPrice<-which(df$price <=0)
 ierrs[selPrice]<-ierrs[selPrice]+1
 jerrs[1]<-length(selPrice)
 selPrice                 #### sel contains the rownames of the individuals with "0" 
 #                        as  value for engineSize
 # df[sel,"engineSize"]<-3    # non-possible values are replaced by NA, missing value symbol in R
-dfVariables[selPrice,"price"]<-NA
+df[selPrice,"price"]<-NA
 selmissPrice <- selPrice
 
-summary(dfVariables$engineSize)
-summary(dfVariables$price)
+summary(df$engineSize)
+summary(df$price)
 ierrs
 jerrs
 
@@ -298,23 +310,25 @@ jerrs
 
 # Outlier detection and elimination
 ```{r}
-boxplot(dfVariables$price, main="Boxplot of Price", ylab="Price")
-var_outPrice<-calcQ(dfVariables$price)
-summary(dfVariables$price)
+boxplot(df$price, main="Boxplot of Price", ylab="Price")
+var_outPrice<-calcQ(df$price)
+summary(df$price)
 abline(h=var_outPrice$souts,col="red")
 abline(h=var_outPrice$souti,col="red")
 
-lloutPrice<-which((dfVariables$price<var_outPrice$souti)|(dfVariables$price>var_outPrice$souts))
+lloutPrice<-which((df$price<var_outPrice$souti)|(df$price>var_outPrice$souts))
+df$price[lloutPrice, "price"]<-NA
 iouts[lloutPrice]<-iouts[lloutPrice]+1
 jouts[1]<-length(lloutPrice)
 
-boxplot(dfVariables$engineSize, main="Boxplot of Engine Size", ylab="Engine Size")
-var_outEngine<-calcQ(dfVariables$engineSize)
-summary(dfVariables$engineSize)
+boxplot(df$engineSize, main="Boxplot of Engine Size", ylab="Engine Size")
+var_outEngine<-calcQ(df$engineSize)
+summary(df$engineSize)
 abline(h=var_outEngine$souts,col="red")
 abline(h=var_outEngine$souti,col="red")
 
-lloutEngine<-which((dfVariables$price<var_outEngine$souti)|(dfVariables$price>var_outEngine$souts))
+lloutEngine<-which((df$price<var_outEngine$souti)|(df$price>var_outEngine$souts))
+df$engineSize[lloutEngine, "engineSize"]<-NA
 iouts[lloutEngine]<-iouts[lloutEngine]+1
 jouts[2]<-length(lloutEngine)
 
