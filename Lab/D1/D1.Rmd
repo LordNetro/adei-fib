@@ -417,3 +417,53 @@ barplot(ranked_groups$Mean_Missing, names.arg=ranked_groups$Year, main="Promedio
 barplot(ranked_groups$Mean_Outliers, names.arg=ranked_groups$Year, main="Promedio de Anómalos por Año", ylab="Promedio", las=2, col="lightcoral")
 barplot(ranked_groups$Mean_Errors, names.arg=ranked_groups$Year, main="Promedio de Errores por Año", ylab="Promedio", las=2, col="lightyellow")
 ```
+
+## Rankings
+```{r}
+#missings
+ranking_misses <- sort.list(mis1$mis_col$mis_x, decreasing = TRUE)
+for (j in ranking_misses) {
+  print(paste(names(df)[j], " : ", mis1$mis_col$mis_x[j]))
+}
+#errores
+ranking_errores <- sort.list(jerrs, decreasing = TRUE)
+for (j in ranking_errores) {
+  if(!is.na(names(df)[j]))
+	{ print(paste(names(df)[j], " : ", jerrs[j])) }
+}
+#outliers
+ranking_outliers <- sort.list(jouts, decreasing = TRUE)
+for (j in ranking_outliers) {
+  if(!is.na(names(df)[j]))
+	{ print(paste(names(df)[j], " : ", jouts[j])) }
+}
+```
+
+## Outliers
+```{r}
+outliers_total <- out##liers_age + outliers_duration
+cat("Outliers totales: ", outliers_total)
+barplot( jouts, main = "Number of Outliers Barplot", xlab = "Number of outliers", col = rainbow(10))
+```
+
+#CORRELACION
+```{r}
+install.packages("corrplot")
+library(corrplot)
+cont_vars = c(3,5,8,9)
+res <- cor(df[,cont_vars], use="complete.obs")
+round(res, 2)
+corrplot(res)
+
+# Convertimos la matriz en un data frame largo para facilitar el ranking
+library(dplyr)
+library(tidyr)
+cor_ranking <- as.data.frame(as.table(res)) %>%
+  filter(Var1 != Var2) %>%
+  mutate(n = as.numeric(Freq)) %>%   # Convertir la columna Freq a numérica y llamarla 'n'
+  arrange(-abs(n))
+
+# Mostramos el ranking
+head(cor_ranking)
+
+```
