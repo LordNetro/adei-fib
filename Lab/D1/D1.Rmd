@@ -253,9 +253,8 @@ jmis<-rep(0,ncol(df))  # columns - variables
 ######################################################
 mis1<-countNA(df)
 imis<-mis1$mis_ind
-numMissIndividuals<-which(imis>=0) #TODO
-numMissIndividuals
-barplot(as.numeric(numMissIndividuals), main = "Missings per Individual", col = rainbow(10))
+jmis<-mis1$mis_col$mis_x
+barplot(as.numeric(imis), main = "Missings per Individual", col = rainbow(10))
 barplot(as.numeric(mis1$mis_col$mis_x), main = "Missings per variable", col = rainbow(10))
 
 #######################################################
@@ -319,7 +318,6 @@ numErrorsIndividuals<-which(ierrs>0)
 numErrorsIndividuals
 jerrs
 barplot(jerrs, main="Errors per Variable", col = rainbow(10))
-
 ```
 
 # Outlier detection and elimination
@@ -334,6 +332,7 @@ lloutPrice<-which((df$price<var_outPrice$souti)|(df$price>var_outPrice$souts))
 df$price[lloutPrice]<-NA
 iouts[lloutPrice]<-iouts[lloutPrice]+1
 jouts[3]<-length(lloutPrice)
+boxplot(df$price, main="Clean Boxplot of Price", ylab="Price")
 
 boxplot(df$engineSize, main="Boxplot of Engine Size", ylab="Engine Size")
 var_outEngine<-calcQ(df$engineSize)
@@ -345,6 +344,7 @@ lloutEngine<-which((df$engineSize<var_outEngine$souti)|(df$engineSize>var_outEng
 df$engineSize[lloutEngine]<-NA
 iouts[lloutEngine]<-iouts[lloutEngine]+1
 jouts[9]<-length(lloutEngine)
+boxplot(df$engineSize, main="Clean Boxplot of Engine Size", ylab="Engine Size")
 
 boxplot(df$mileage, main="Boxplot of Mileage", ylab="Mileage")
 var_outMileage<-calcQ(df$mileage)
@@ -356,6 +356,7 @@ lloutMileage<-which((df$mileage<var_outMileage$souti)|(df$mileage>var_outMileage
 df$mileage[lloutMileage]<-NA
 iouts[lloutMileage]<-iouts[lloutMileage]+1
 jouts[5]<-length(lloutMileage)
+boxplot(df$mileage, main="Clean Boxplot of Mileage", ylab="Mileage")
 
 boxplot(df$mpg, main="Boxplot of MPG", ylab="MPG")
 var_outMPG<-calcQ(df$mpg)
@@ -367,7 +368,52 @@ lloutMPG<-which((df$mpg<var_outMPG$souti)|(df$mpg>var_outMPG$souts))
 df$mpg[lloutMPG]<-NA
 iouts[lloutMPG]<-iouts[lloutMPG]+1
 jouts[5]<-length(lloutMPG)
+boxplot(df$mpg, main="Clean Boxplot of MPG", ylab="MPG")
 
 jouts
 #df[llout,"engineSize"]<-NA
+```
+
+#Corr
+```{r}
+# Añadir nombres a los vectores jmis, jouts, y jerrs
+variables <- c("model", "year", "price", "transmission", "mileage", "fuelType", "tax", "mpg", "engineSize", "manufacturer")
+names(jmis) <- variables
+names(jouts) <- variables
+names(jerrs) <- variables
+
+# 1. Describir estas variables y verificar qué otras variables tienen las asociaciones más altas.
+variables_of_interest <- c("mileage", "mpg", "engineSize", "price")
+desc_stats <- data.frame(
+  Variable = variables_of_interest,
+  Missing = imis[variables_of_interest],
+  Outliers = iouts[variables_of_interest],
+  Errors = ierrs[variables_of_interest]
+)
+
+# 2. Calcular la correlación con todas las otras variables y clasificar estas variables según la correlación.
+correlations <- sapply(df[, variables_of_interest], function(x) cor(x, df$price, use="complete.obs"))
+ranked_correlations <- sort(correlations, decreasing = TRUE)
+
+# Mostrar gráfico de barras para las correlaciones
+barplot(ranked_correlations, main="Correlaciones con Precio", ylab="Correlación", las=2, col="skyblue")
+
+# 3. Calcular para cada grupo de individuos el promedio de valores faltantes/anómalos/errores para las variables de interés.
+grouped_missing <- tapply(mis1$mis_ind, df$year, mean)
+grouped_outliers <- tapply(iouts, df$year, mean) # assuming iouts is correctly calculated for outliers
+grouped_errors <- tapply(ierrs, df$year, mean) # assuming ierrs is correctly calculated for errors
+
+grouped_mean <- data.frame(
+  Year = unique(df$year),
+  Mean_Missing = grouped_missing,
+  Mean_Outliers = grouped_outliers,
+  Mean_Errors = grouped_errors
+)
+
+ranked_groups <- grouped_mean[order(-grouped_mean$Mean_Missing, -grouped_mean$Mean_Outliers, -grouped_mean$Mean_Errors), ]
+
+# Mostrar gráfico de barras para el promedio de valores faltantes/anómalos/errores por año
+barplot(ranked_groups$Mean_Missing, names.arg=ranked_groups$Year, main="Promedio de Valores Faltantes por Año", ylab="Promedio", las=2, col="lightgreen")
+barplot(ranked_groups$Mean_Outliers, names.arg=ranked_groups$Year, main="Promedio de Anómalos por Año", ylab="Promedio", las=2, col="lightcoral")
+barplot(ranked_groups$Mean_Errors, names.arg=ranked_groups$Year, main="Promedio de Errores por Año", ylab="Promedio", las=2, col="lightyellow")
 ```
