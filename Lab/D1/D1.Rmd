@@ -1,4 +1,5 @@
 # Lecture of DataFrames:
+
 ```{r Read data}
 df1 <- read.table("audi.csv",header=T, sep=",")
 df1$manufacturer <- "Audi"
@@ -28,11 +29,13 @@ summary(df)
 
 save(list=c("df"),file="Cars.RData")
 ```
+
 ```{r}
 summary (df)
 ```
 
 #Let's see the classes of the variables
+
 ```{r}
 class(df$model)
 class(df$year)
@@ -59,6 +62,7 @@ factormpg <- as.factor(df$mpg)
 testVar <- as.factor(df$transmission)
 summary(testVar)
 ```
+
 ```{r}
 as.factor(df$mpg)
 ```
@@ -68,27 +72,32 @@ as.factor(df$mpg)
 ```{r}
 hist(df$price, main="Price Histogram", xlab="Price", col="skyblue", border="black")
 ```
+
 #Transmission Barplot
 
 ```{r}
 barplot(table(df$transmission), main="Barplot of Transmission Types", xlab="Transmission Type", ylab="Frequency", col=c("skyblue", "lightpink"), border="black")
 
 ```
+
 #Barplot of Fuel Types
 
 ```{r}
 barplot(table(df$fuelType), main="Barplot of Fuel Types", xlab="Fuel Type", ylab="Frequency", col=c("skyblue", "lightpink", "lightgreen"), border="black")
 ```
+
 #MPG Histogram
 
 ```{r}
 hist(df$mpg, main="MPG Histogram", xlab="MPG", col="skyblue", border="black")
 ```
+
 #Mileage Histogram
 
 ```{r}
 hist(df$mileage, main="Mileage Histogram", xlab="Mileage", col="lightgreen", border="black")
 ```
+
 #Model Barplot
 
 ```{r}
@@ -100,21 +109,25 @@ barplot(table(df$model), main="Barplot of df Models", xlab="Model", ylab="Freque
 ```{r}
 barplot(table(df$manufacturer), main="Barplot of df Manufacturers", xlab="Manufacturers", ylab="Frequency", col=rainbow(length(table(df$manufacturer))), border="black")
 ```
+
 #Year Barplot
 
 ```{r}
 barplot(table(df$year), main="Barplot of Year", xlab="Year", ylab="Frequency", col=rainbow(length(table(df$year))), border="black")
 ```
+
 #Tax Histogram
 
 ```{r}
 hist(df$tax, main="Tax Histogram", xlab = "Tax", col = "lightyellow", border = "black")
 ```
+
 #Engine Size Histogram
 
 ```{r}
 hist(df$engineSize, main="Engine Size Histogram", xlab = "Engine Size", col = "lightcoral", border = "black")
 ```
+
 ```{r}
 summary(df)
 ```
@@ -122,6 +135,7 @@ summary(df)
 #We can transform variables into factors with `as.factor`:
 
 #mpg:
+
 ```{r}
 breaksmpg <- c(-Inf,  118.525,  235.95, 353.375, Inf)
 labelsmpg <- c("very_inefficient", "inefficient", "efficient", "very_efficient")
@@ -131,6 +145,7 @@ plot(new_mpg, main="MPG Grouped Histogram",  col = rainbow(4))
 ```
 
 #engineSize:
+
 ```{r}
 breaksengineSize <- c(-Inf, 2.067, 4.13, Inf)
 labelsengineSize <- c("small", "normal", "big")
@@ -140,6 +155,7 @@ plot(new_engineSize, main="Engine Size Grouped Histogram",  col = rainbow(4))
 ```
 
 #year:
+
 ```{r}
 breaksyear <- c(-Inf, 2002.75, 2008.5, 2014.25, Inf)
 labelsyear <- c("very_old", "old", "new", "very_new")
@@ -150,6 +166,7 @@ plot(new_year, main="Years Grouped Histogram",  col = rainbow(4))
 ```
 
 #price:
+
 ```{r}
 breaksprice <- c(-Inf, 35273.5, 68557, 101840.5, Inf)
 labelsprice <- c("very_cheap", "cheap", "expensive", "very_expensive")
@@ -159,6 +176,7 @@ plot(new_price, main="Price Grouped Histogram" ,col = rainbow(4))
 ```
 
 #mileage:
+
 ```{r}
 breaksmileage <- c(-Inf, 64750.75, 129500.5, 194250.25, Inf)
 labelsmileage <- c("very_used", "used", "shortly_used", "almost_new")
@@ -168,6 +186,7 @@ plot(new_mileage, main="Mileage Grouped Histogram",  col = rainbow(4))
 ```
 
 #tax:
+
 ```{r}
 breakstax <- c(-Inf, 145, 290, 435, Inf)
 labelstax <- c("very_low", "low", "high", "very_high")
@@ -181,6 +200,7 @@ plot(new_tax, main="Tax Grouped Histogram",  col = rainbow(4))
 ```{r}
 hist(df$engineSize, main="Engine Size Histogram", xlab = "Engine Size", col = "lightcoral", border = "black")
 ```
+
 #Factorized Model Histogram
 
 ```{r}
@@ -188,6 +208,7 @@ factorModel <- as.factor(df$model)
 summary(factorModel)
 plot(factorModel, main="Factorized Model Histogram",  col = rainbow(24))
 ```
+
 #Factorized Fuel Type Histogram
 
 ```{r}
@@ -195,6 +216,7 @@ factorFuelType <- as.factor(df$fuelType)
 summary(factorFuelType)
 #plot(factorFuelType, main="Factorized Fuel Type Histogram",  col = rainbow(24))
 ```
+
 #Factorized Transmission Histogram
 
 ```{r}
@@ -202,6 +224,7 @@ factorTransmission <- as.factor(df$transmission)
 summary(factorTransmission)
 #plot(factorTransmission, main="Factorized Fuel Type Histogram",  col = rainbow(24))
 ```
+
 #Factorized Manufactorer Histogram
 
 ```{r}
@@ -242,6 +265,7 @@ countX <- function(x,X) {
 ```
 
 # Initialization of counts for missings, outliers and errors. All numerical variables have to be checked before and processing of outliers and errors
+
 ```{r}
 
 dfVariables <- data.frame(price = df$price, engineSize = df$engineSize)
@@ -321,6 +345,7 @@ barplot(jerrs, main="Errors per Variable", col = rainbow(10))
 ```
 
 # Outlier detection and elimination
+
 ```{r}
 boxplot(df$price, main="Boxplot of Price", ylab="Price")
 var_outPrice<-calcQ(df$price)
@@ -373,7 +398,9 @@ boxplot(df$mpg, main="Clean Boxplot of MPG", ylab="MPG")
 jouts
 #df[llout,"engineSize"]<-NA
 ```
+
 ## Rankings
+
 ```{r}
 #missings
 ranking_misses <- sort.list(mis1$mis_col$mis_x, decreasing = TRUE)
@@ -395,6 +422,7 @@ for (j in ranking_outliers) {
 ```
 
 ## Outliers
+
 ```{r}
 outliers_total <- out##liers_age + outliers_price
 cat("Outliers totales: ", outliers_total)
@@ -402,6 +430,7 @@ barplot( jouts, main = "Number of Outliers Barplot", xlab = "Number of outliers"
 ```
 
 #CORRELATION
+
 ```{r}
 install.packages("corrplot")
 library(corrplot)
@@ -426,6 +455,7 @@ head(cor_ranking)
 #IMPUTATION + PROFILING (Part of the data is already cleaned)
 
 ##Transform the values of the as variables to factor or numeric
+
 ```{r}
 df$price <- as.numeric(df$price)
 df$mileage <- as.numeric(df$mileage)
@@ -434,17 +464,20 @@ df$engineSize <- as.numeric(df$engineSize)
 ```
 
 ##Importing library
+
 ```{r}
 library(missMDA)
 ```
 
 ##Create a copy of df in clean_df
+
 ```{r}
 clean_df <- df
 summary(clean_df)
 ```
 
 ##Now let's do the continuous variables imputation in clean_df
+
 ```{r}
 library(missMDA)
 #Remember that we have stored the continuous vars
@@ -456,7 +489,9 @@ boxplot(main = "Imputed Mileage", clean_df_imputed$completeObs[,"mileage"])
 boxplot(main = "Imputed MPG", clean_df_imputed$completeObs[,"mpg"])
 boxplot(main = "Imputed engineSize", clean_df_imputed$completeObs[,"engineSize"])
 ```
+
 ##Adding the imputations on the clean data
+
 ```{r}
 clean_df[,"price"] <- clean_df_imputed$completeObs[,"price"]
 clean_df[,"mileage"] <- clean_df_imputed$completeObs[,"mileage"]
@@ -465,6 +500,7 @@ clean_df[,"engineSize"] <- clean_df_imputed$completeObs[,"engineSize"]
 ```
 
 ##Profiling of the price variable with the continuous variables
+
 ```{r}
 # We create an empty vector to store the results of the continuous variable correlations.
 correlationsPrice <- c()
@@ -480,7 +516,9 @@ for (variable in names(clean_df[,cont_vars])) {
 }
 
 ```
+
 ##Profiling of the mileage variable with the continuous variables
+
 ```{r}
 # We create an empty vector to store the results of the continuous variable correlations.
 correlationsMileage <- c()
@@ -496,7 +534,9 @@ for (variable in names(clean_df[,cont_vars])) {
 }
 
 ```
+
 ##Profiling of the mpg variable with the continuous variables
+
 ```{r}
 # We create an empty vector to store the results of the continuous variable correlations.
 correlationsMPG <- c()
@@ -512,7 +552,9 @@ for (variable in names(clean_df[,cont_vars])) {
 }
 
 ```
+
 ##Profiling of the engineSize variable with the continuous variables
+
 ```{r}
 # We create an empty vector to store the results of the continuous variable correlations.
 correlationsEngineSize <- c()
@@ -529,7 +571,8 @@ for (variable in names(clean_df[,cont_vars])) {
 
 ```
 
-##Let's identify multivariate outliers of clean_df 
+##Let's identify multivariate outliers of clean_df
+
 ```{r}
 library(mvoutlier)
 clean_df_numeric <- clean_df[, sapply(clean_df, is.numeric)]
@@ -539,4 +582,3 @@ multi_out_total <- which(m_dist > cutoff)
 cat("Multivariant outliers: ", length(multi_out_total))
 barplot(length(multi_out_total), main="Multivariant outliers", ylab="Number of multivariant outliers")
 ```
-
