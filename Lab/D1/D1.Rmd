@@ -373,51 +373,6 @@ boxplot(df$mpg, main="Clean Boxplot of MPG", ylab="MPG")
 jouts
 #df[llout,"engineSize"]<-NA
 ```
-
-#Corr
-```{r}
-# Añadir nombres a los vectores jmis, jouts, y jerrs
-variables <- c("model", "year", "price", "transmission", "mileage", "fuelType", "tax", "mpg", "engineSize", "manufacturer")
-names(jmis) <- variables
-names(jouts) <- variables
-names(jerrs) <- variables
-
-# 1. Describir estas variables y verificar qué otras variables tienen las asociaciones más altas.
-variables_of_interest <- c("mileage", "mpg", "engineSize", "price")
-desc_stats <- data.frame(
-  Variable = variables_of_interest,
-  Missing = imis[variables_of_interest],
-  Outliers = iouts[variables_of_interest],
-  Errors = ierrs[variables_of_interest]
-)
-
-# 2. Calcular la correlación con todas las otras variables y clasificar estas variables según la correlación.
-correlations <- sapply(df[, variables_of_interest], function(x) cor(x, df$price, use="complete.obs"))
-ranked_correlations <- sort(correlations, decreasing = TRUE)
-
-# Mostrar gráfico de barras para las correlaciones
-barplot(ranked_correlations, main="Correlaciones con Precio", ylab="Correlación", las=2, col="skyblue")
-
-# 3. Calcular para cada grupo de individuos el promedio de valores faltantes/anómalos/errores para las variables de interés.
-grouped_missing <- tapply(mis1$mis_ind, df$year, mean)
-grouped_outliers <- tapply(iouts, df$year, mean) # assuming iouts is correctly calculated for outliers
-grouped_errors <- tapply(ierrs, df$year, mean) # assuming ierrs is correctly calculated for errors
-
-grouped_mean <- data.frame(
-  Year = unique(df$year),
-  Mean_Missing = grouped_missing,
-  Mean_Outliers = grouped_outliers,
-  Mean_Errors = grouped_errors
-)
-
-ranked_groups <- grouped_mean[order(-grouped_mean$Mean_Missing, -grouped_mean$Mean_Outliers, -grouped_mean$Mean_Errors), ]
-
-# Mostrar gráfico de barras para el promedio de valores faltantes/anómalos/errores por año
-barplot(ranked_groups$Mean_Missing, names.arg=ranked_groups$Year, main="Promedio de Valores Faltantes por Año", ylab="Promedio", las=2, col="lightgreen")
-barplot(ranked_groups$Mean_Outliers, names.arg=ranked_groups$Year, main="Promedio de Anómalos por Año", ylab="Promedio", las=2, col="lightcoral")
-barplot(ranked_groups$Mean_Errors, names.arg=ranked_groups$Year, main="Promedio de Errores por Año", ylab="Promedio", las=2, col="lightyellow")
-```
-
 ## Rankings
 ```{r}
 #missings
@@ -425,7 +380,7 @@ ranking_misses <- sort.list(mis1$mis_col$mis_x, decreasing = TRUE)
 for (j in ranking_misses) {
   print(paste(names(df)[j], " : ", mis1$mis_col$mis_x[j]))
 }
-#errores
+#errors
 ranking_errores <- sort.list(jerrs, decreasing = TRUE)
 for (j in ranking_errores) {
   if(!is.na(names(df)[j]))
@@ -441,12 +396,12 @@ for (j in ranking_outliers) {
 
 ## Outliers
 ```{r}
-outliers_total <- out##liers_age + outliers_duration
+outliers_total <- out##liers_age + outliers_price
 cat("Outliers totales: ", outliers_total)
 barplot( jouts, main = "Number of Outliers Barplot", xlab = "Number of outliers", col = rainbow(10))
 ```
 
-#CORRELACION
+#CORRELATION
 ```{r}
 install.packages("corrplot")
 library(corrplot)
@@ -455,15 +410,133 @@ res <- cor(df[,cont_vars], use="complete.obs")
 round(res, 2)
 corrplot(res)
 
-# Convertimos la matriz en un data frame largo para facilitar el ranking
+# We convert the matrix into a long data frame to facilitate the ranking.
 library(dplyr)
 library(tidyr)
 cor_ranking <- as.data.frame(as.table(res)) %>%
   filter(Var1 != Var2) %>%
-  mutate(n = as.numeric(Freq)) %>%   # Convertir la columna Freq a numérica y llamarla 'n'
+  mutate(n = as.numeric(Freq)) %>%   # Convert the Freq column to numeric and call it 'n'.
   arrange(-abs(n))
 
-# Mostramos el ranking
+# Print the ranking
 head(cor_ranking)
 
 ```
+
+#IMPUTATION + PROFILING (Part of the data is already cleaned)
+
+##Transform the values of the as variables to factor or numeric
+```{r}
+df$price <- as.numeric(df$price)
+df$mileage <- as.numeric(df$mileage)
+df$mpg <- as.numeric(df$mpg)
+df$engineSize <- as.numeric(df$engineSize)
+```
+
+##Importing library
+```{r}
+library(missMDA)
+```
+
+##Create a copy of df in clean_df
+```{r}
+clean_df <- df
+summary(clean_df)
+```
+
+##Now let's do the continuous variables imputation in clean_df
+```{r}
+library(missMDA)
+#Remember that we have stored the continuous vars
+cont_vars
+clean_df_imputed <- imputePCA(clean_df[,cont_vars],ncp=2)
+summary(clean_df_imputed$completeObs)
+boxplot(main = "Imputed Price", clean_df_imputed$completeObs[,"price"])
+boxplot(main = "Imputed Mileage", clean_df_imputed$completeObs[,"mileage"])
+boxplot(main = "Imputed MPG", clean_df_imputed$completeObs[,"mpg"])
+boxplot(main = "Imputed engineSize", clean_df_imputed$completeObs[,"engineSize"])
+```
+##Adding the imputations on the clean data
+```{r}
+clean_df[,"price"] <- clean_df_imputed$completeObs[,"price"]
+clean_df[,"mileage"] <- clean_df_imputed$completeObs[,"mileage"]
+clean_df[,"mpg"] <- clean_df_imputed$completeObs[,"mpg"]
+clean_df[,"engineSize"] <- clean_df_imputed$completeObs[,"engineSize"]
+```
+
+##Profiling of the price variable with the continuous variables
+```{r}
+# We create an empty vector to store the results of the continuous variable correlations.
+correlationsPrice <- c()
+
+# Perform the correlation test for each variable.
+for (variable in names(clean_df[,cont_vars])) {
+  correlation <- cor.test(clean_df$price, clean_df[[variable]])
+  correlationsPrice <- c(variable, correlation, correlation$p.value)
+  cat("[",variable)
+  cat(" ] corr:", correlation$estimate) 
+  cat(" pvalue:", correlation$p.value)
+  cat("\n")
+}
+
+```
+##Profiling of the mileage variable with the continuous variables
+```{r}
+# We create an empty vector to store the results of the continuous variable correlations.
+correlationsMileage <- c()
+
+# Perform the correlation test for each variable.
+for (variable in names(clean_df[,cont_vars])) {
+  correlation <- cor.test(clean_df$mileage, clean_df[[variable]])
+  correlationsMileage <- c(variable, correlation, correlation$p.value)
+  cat("[",variable)
+  cat(" ] corr:", correlation$estimate) 
+  cat(" pvalue:", correlation$p.value)
+  cat("\n")
+}
+
+```
+##Profiling of the mpg variable with the continuous variables
+```{r}
+# We create an empty vector to store the results of the continuous variable correlations.
+correlationsMPG <- c()
+
+# Perform the correlation test for each variable.
+for (variable in names(clean_df[,cont_vars])) {
+  correlation <- cor.test(clean_df$mpg, clean_df[[variable]])
+  correlationsMPG <- c(variable, correlation, correlation$p.value)
+  cat("[",variable)
+  cat(" ] corr:", correlation$estimate) 
+  cat(" pvalue:", correlation$p.value)
+  cat("\n")
+}
+
+```
+##Profiling of the engineSize variable with the continuous variables
+```{r}
+# We create an empty vector to store the results of the continuous variable correlations.
+correlationsEngineSize <- c()
+
+# Perform the correlation test for each variable.
+for (variable in names(clean_df[,cont_vars])) {
+  correlation <- cor.test(clean_df$engineSize, clean_df[[variable]])
+  correlationsEngineSize <- c(variable, correlation, correlation$p.value)
+  cat("[",variable)
+  cat(" ] corr:", correlation$estimate) 
+  cat(" pvalue:", correlation$p.value)
+  cat("\n")
+}
+
+```
+
+##Let's identify multivariate outliers of clean_df 
+```{r}
+library(mvoutlier)
+clean_df_numeric <- clean_df[, sapply(clean_df, is.numeric)]
+m_dist <- mahalanobis(clean_df_numeric, center = colMeans(clean_df_numeric), cov = cov(clean_df_numeric))
+cutoff <- qchisq(0.95, df = 4)
+multi_out_total <- which(m_dist > cutoff)
+cat("Multivariant outliers: ", length(multi_out_total))
+barplot(length(multi_out_total), main="Multivariant outliers", ylab="Number of multivariant outliers")
+```
+
