@@ -1,0 +1,781 @@
+---
+title: "D2"
+output:
+  word_document: default
+  html_document: default
+  pdf_document: default
+date: '2023-11-15'
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading the packages
+
+```{r echo = T, results = 'hide', message=FALSE, error=FALSE, warning=FALSE}
+requiredPackages <- c("missMDA","chemometrics","mvoutlier","effects","FactoMineR","car", "factoextra","RColorBrewer","dplyr","ggmap","ggthemes","knitr")
+package.check <- lapply(requiredPackages, FUN = function(x) {
+  if (!require(x, character.only = TRUE)) {
+    install.packages(x, dependencies = TRUE)
+    library(x, character.only = TRUE)
+  }
+})
+rm(package.check, requiredPackages)
+```
+
+## Defining the working directory
+
+We are going to charge the result of the first deliverable, so we can continue working on it without losing our work.
+
+
+```{r echo = T, results = 'hide', message=FALSE, error=FALSE, warning=FALSE}
+load("Cars_Data_Del1.RData")
+```
+
+```{r}
+summary(df$transmission)
+```
+
+
+# PCA Analysis
+
+```{r}
+vars_dis <- c("year", "transmission", "mpg", "model", "manufacturer", "fuelType")
+vars_con <- c("mileage", "tax")
+vars_res <- c("price", "engineSize")
+
+res.pca <- PCA(df[,vars_con])
+```
+Thanks to the PCA we can see how milage and tax are very inverse correlated. Then we can say that when the tax increases the mileage is going to decrease. FALTA EXPLICACION
+
+## Analysis of the Eigenvalues and the dominant axes
+
+### How many axes do we have to interpret according to Kaiser 
+
+According to Kaiser a component with an eigenvalue > 1 means that it contributes more to the variation than the original data. It is normally used as a cut-off point to determine the number of principal components that we are going to keep. Thenafter we are doing so: 
+
+```{r}
+eigenvalues <- res.pca$eig
+eigenvalues
+```
+After calculating the eigenvalues we have checked that the first component have an eigenvalue > 1. So, we are going to keep this first dimension, having a 61.75% of cumulative variance.
+
+```{r}
+eigenvalues[1,]
+rm(eigenvalues)
+```
+
+### How many axes do we have to interpret according to Elbow's rule
+
+In the case of the Elbow's rule, we do not have a defined cutting point according to which we can decide the dimensions to use. It is then based on taking the dimensions until the difference in variance of the next factorial plane is almost the same as the current one.
+
+With the following plot we can see wich has the minimum distance:
+
+```{r}
+fviz_screeplot(
+  res.pca, 
+  addlabels=TRUE, 
+  ylim=c(0,70),
+  barfill="lightgreen", 
+  barcolor="lightgreen",
+  linecolor = "darkgreen",
+  main="Percentage of Variance of PCA"
+)
+```
+
+With this rule we can see how the difference between the percentages is 23.4%. We are going to say that this difference is too large so that we can only get the first dimension. Thus we are obtaining the same result as with the Kaiser rule.
+
+## Individuals point of view
+
+### Extreme individuals
+
+```{r}
+fviz_pca_ind(res.pca, col.ind="contrib", geom = "point") +
+  scale_color_gradient2(mid="lightgreen", high="red")
+```
+With the plot above we can see how some of the individuals in this two dimensions have a very contributed values, we can see it with the red points.  
+
+#### First Dimension
+
+We are going to start searching for the two more extreme values:
+
+In the first step we can find the summaries of our two variables so that we have in mind our maximums and minimums of each one so that we can compare them with the values of our individuals.
+
+```{r}
+summary(df$tax)
+summary(df$mileage)
+```
+
+
+```{r}
+rang<-order(res.pca$ind$coord[,1])
+contrib.extremes<-c(row.names(df)[rang[1]], row.names(df)[rang[length(rang)]])
+contrib.extremes
+df[which(row.names(df) %in% row.names(df)[rang[length(rang)]] | row.names(df) %in% row.names(df)[rang[1]]), 1:10]
+
+fviz_pca_ind(res.pca, col.ind = "darkgreen", select.ind = list(names=contrib.extremes))
+summary(df$tax)
+```
+
+We see that the two most influential individuals are 11864 and 33057. Comparing these results with the PCA, we see that these two elements stand out for their mileage. The first one has a value of 109050 for the mileage variable, almost the maximum, and the second one 19000.  
+
+We are going to repeat this process but, this time for the 10 most influential individuals:
+
+```{r}
+contrib.extremes<-c(row.names(df)[rang[1:10]], row.names(df)[rang[(length(rang)-10):length(rang)]])
+
+fviz_pca_ind(res.pca, col.ind = "darkgreen", select.ind = list(names=contrib.extremes))
+```
+In the plot above we can see the 10 individuals, in the right sight with the extreme values near to the maximum value, and the ones in the left part the ones near to the minimum. 
+
+#### Second Dimension
+
+Now, we are going to repeat the steps from the seccion above, but this time, with the second dimension:
+
+```{r}
+rang<-order(res.pca$ind$coord[,2])
+contrib.extremes<-c(row.names(df)[rang[1]], row.names(df)[rang[length(rang)]])
+
+df[which(row.names(df) %in% row.names(df)[rang[length(rang)]] | row.names(df) %in% row.names(df)[rang[1]]), 1:10]
+
+fviz_pca_ind(res.pca, select.ind = list(names=contrib.extremes))
+```
+
+We can see in the grafic that this two point mentioned are 766 and 20609. If we look at the tax values of both individuals, we can indeed see that the first (766) has a tax value of 0, this being the minimum. And the second (20609) has a value of 580, beign the maximum. 
+
+We will then do the same study for the 10 most influential individuals.
+
+```{r}
+
+contrib.extremes<-c(row.names(df)[rang[1:10]], row.names(df)[rang[(length(rang)-10):length(rang)]])
+
+fviz_pca_ind(res.pca, col.ind = "darkgreen", select.ind = list(names=contrib.extremes))
+```
+
+In the two directions of the second dimension we see that there are a number of individuals who are almost equally representative, although those in the negative direction are fewer and are possibly influencing the results more.
+
+And finally, we will delete the variables as they will not be useful for the future.
+
+```{r}
+rm(contrib.extremes, rang)
+```
+
+#### Detection of multivariate outliers and influent data
+
+Studying the data obtained in the previous section and the GWP study, we have decided that, although there are some values that are far from the rest, they are numbers that can be real, taking into account the realities they represent. That is why we conclude that we do not have multivariate outliers.
+
+### Interpreting the axes
+
+In this section, the aim is to study the contribution of each section in the various dimensions, and above all which are the most representative in each of them.
+
+With the following command we will obtain the results for the two dimensions:
+
+```{r}
+res.des <- dimdesc(res.pca, axes=1:2)
+res.des
+```
+
+We are going to study them separately.
+
+##### First Dimension
+
+```{r}
+fviz_contrib(  ## contributions of variables to PC1
+  res.pca, 
+  fill = "lightgreen",
+  color = "darkgreen",
+  choice = "var", 
+  axes = 1, 
+  top = 6)
+res.des$Dim.1
+```
+
+##### Second Dimension
+
+```{r}
+fviz_contrib(  ## contributions of variables to PC1
+  res.pca, 
+  fill = "lightgreen",
+  color = "darkgreen",
+  choice = "var", 
+  axes = 2, 
+  top = 6)
+res.des$Dim.2
+```
+
+
+### PCA with supplementary variables
+
+In this last part of the PCA, we want to repeat the same analysis, but this time taking into account the supplementary variables. In our case they will be *price* and *engineSize*, as supplementary quantitative variables, and all categorical variables as qualitative variables: 
+
+
+```{r}
+res.pca <- PCA(df[,c(vars_con, vars_dis, vars_res)], quanti.sup = c("price", "engineSize"), quali.sup = c("year", "transmission", "mpg", "model", "manufacturer", "fuelType")) 
+
+plot(res.pca$ind$coord[,1], res.pca$ind$coord[,2], pch=19, col="grey30", xlab = "PCA X axis", ylab = "PCA Y axis")
+points(res.pca$quali.sup$coord[,1], res.pca$quali.sup$coord[,2], pch=15, col="lightgreen")
+lines(res.pca$quali.sup$coord[3:4,1], res.pca$quali.sup$coord[3:4,2], lwd=2, lty=2, col="coral")
+text(res.pca$quali.sup$coord[,1],res.pca$quali.sup$coord[,2],labels=names(res.pca$quali.sup$coord[,1]),col="lightgreen",cex=0.5)
+
+```
+
+```{r}
+rm(res.des)
+```
+
+
+## K-Means Classification
+### Description of clusters
+
+We start with the K-means classification by recalculating the PCA and creating a "compPrincipals" variable with the 2 principal components according to Kaiser.
+
+```{r}
+compPrincipals <- res.pca$ind$coord[,1:2]
+dim(compPrincipals)
+head(compPrincipals)
+```
+
+#### Optimal number of clusters
+
+```{r}
+fviz_nbclust(compPrincipals, kmeans, method = "silhouette")
+```
+
+Running the above command we see that the optimal number of clusters using the silhouette method is 3.
+
+### Classificaction
+
+We calculate the distances of the principal components, and also the percentage of inertia explained:
+
+```{r}
+distCP<-dist(compPrincipals)
+kmeansCP<-kmeans(distCP, 2, iter.max=30, trace=TRUE)
+
+inercia <- 100*(kmeansCP$betweenss/kmeansCP$totss)
+inercia
+```
+
+We can see that the result is an iteration and that the inertia explained is 60.3%. And we store the number of clusters in the dataframe.
+
+```{r, warning=FALSE}
+df$nClustKM<-0
+df$nClustKM<-kmeansCP$cluster
+df$nClustKM<-factor(df$nClustKM)
+barplot(table(df$nClustKM),col="lightgreen",border="darkgreen",main="Observacions per cluster amb K-means")
+rm(distCP, kmeansCP, inercia, compPrincipals)
+```
+
+#### Characteristics
+
+To see the characteristics of each cluster, run the following command:
+
+```{r, warning=FALSE}
+dim(df)
+res.cat <-catdes(df,ncol(df))
+```
+
+##### Categorical variables
+
+FALTA EXPLICACIÓN
+
+We will explain the results by looking at each cluster by variable. We will start with the categorical ones.
+
+###### Cluster 1
+
+```{r}
+res.cat$category[1]
+```
+
+
+###### Cluster 2
+
+```{r}
+res.cat$category[2]
+```
+
+
+##### Quantitaive variables
+
+```{r}
+res.cat$quanti.var
+```
+
+###### Cluster 1
+
+```{r}
+res.cat$quanti[1]
+```
+
+###### Cluster 2
+
+```{r}
+res.cat$quanti[2]
+```
+
+
+## Hierarchical Clustering
+
+To make the hierarchical clusters we will start by running the HCPC command with the number of clusters -1 to obtain the optimal number of clusters according to the programme for our case study.
+
+
+```{r, warning=FALSE}
+res.hcpc <- HCPC(res.pca,nb.clust = -1, order = TRUE)
+```
+
+We can see how the execution results in 4 hierarchical clusters, and in the following we will study why this is so and what characteristics each of them has.
+
+### Description of clusters
+
+The number of observations in each cluster is shown below:
+
+```{r}
+table(res.hcpc$data.clust$clust)
+barplot(summary(res.hcpc$data.clust$clust), col="lightgreen", border="darkgreen", main="Individuals in each cluster")
+```
+
+With the barplot we can see the number of observations that each cluster has.
+
+### Interpretation of the results of the classification
+
+#### The description of the cluster for the variables
+
+With the next command we can see the categorical variables that characterise the clusters:
+
+```{r}
+names(res.hcpc$desc.var)
+res.hcpc$desc.var$quanti
+```
+
+We can see the intensity of the variables, only those with the smallest p-values.
+
+In the following, we want to see for each cluster which categories characterise it.
+
+```{r}
+res.hcpc$desc.var$category
+```
+
+We now turn to the quantitative variables that characterise the clusters:
+
+```{r}
+res.hcpc$desc.var$quanti.var
+```
+We can see how all the variables shown are represented.
+
+Now we want to know which variables are associated with the quantitative variables so we will run:
+
+```{r}
+res.hcpc$desc.var$quanti
+```
+
+##### Cluster 1
+This cluster is characterized by significantly higher values in *mileage* and *mpg* compared to the overall average, indicating that vehicles in this cluster tend to have higher mileage and better fuel efficiency. Furthermore, *engineSize* and *tax* are lower than average, suggesting that vehicles here might have smaller engines and lower vehicle tax. The *price* and *year* are also lower, indicating that this cluster could consist of older and more economical vehicles.
+
+##### Cluster 2
+Vehicles in Cluster 2 have lower *mpg* and higher *mileage* than average, which could imply heavier usage or work-type vehicles. The *engineSize* is significantly larger, and the *tax* is much lower, suggesting that these vehicles might have larger engines but an unexpectedly low vehicle tax. The *year* and *price* are lower, indicating they could be older and less expensive vehicles.
+
+##### Cluster 3
+Cluster 3 is distinguished by having the highest values in *year*, indicating that it mainly comprises newer models. The *price* and *tax* are also high, reflecting probably the greater value and taxes associated with new vehicles. However, *mpg* is negative and *mileage* is the lowest among all clusters, which could mean that these vehicles are less used or newer.
+
+##### Cluster 4
+In Cluster 4, the *tax* variable is significantly higher, suggesting that vehicles here carry higher taxes, potentially due to higher valuations or tax rates. *engineSize* is also higher, indicating larger engine sizes. However, *mpg* and *mileage* are lower, which may indicate vehicles with less usage or fuel efficiency. The *year* is lower, suggesting that the vehicles are not the newest.
+
+These interpretations are based on the mean and standard deviation of the quantitative variables in each cluster compared to the overall average. The p-value associated with each variable's test indicates the statistical significance of the differences found, with lower values indicating higher significance.
+
+#### The descripction of the clusters for the individuals
+
+```{r}
+res.hcpc$desc.ind$para
+```
+On top we can see the most representative individuals for each cluster. From this ones we are going to obtain the rownames.
+
+```{r}
+res.hcpc$desc.ind$dist
+```
+
+What we obtain are those individuals in each cluster that are far away from the rest of the individuals in the cluster. In addition, we also get the rownames of each individual with the greatest distance from the others in the same cluster.
+
+#### Examining the values of individuals that characterise the classes
+
+We want to extract the graphical representation of the individuals characterising the classes (for i dist).
+
+```{r}
+para1 <- which(rownames(res.pca$ind$coord)%in%names(res.hcpc$desc.ind$para[[1]]))
+dist1<-which(rownames(res.pca$ind$coord)%in%names(res.hcpc$desc.ind$dist[[1]]))
+para2 <- which(rownames(res.pca$ind$coord)%in%names(res.hcpc$desc.ind$para[[2]]))
+dist2<-which(rownames(res.pca$ind$coord)%in%names(res.hcpc$desc.ind$dist[[2]]))
+para3 <- which(rownames(res.pca$ind$coord)%in%names(res.hcpc$desc.ind$para[[3]]))
+dist3<-which(rownames(res.pca$ind$coord)%in%names(res.hcpc$desc.ind$dist[[3]]))
+para4 <- which(rownames(res.pca$ind$coord)%in%names(res.hcpc$desc.ind$para[[4]]))
+dist4<-which(rownames(res.pca$ind$coord)%in%names(res.hcpc$desc.ind$dist[[4]]))
+```
+
+```{r}
+plot(res.pca$ind$coord[,1],res.pca$ind$coord[,2],col="grey50",cex=0.5,pch=16)
+points(res.pca$ind$coord[para1,1],res.pca$ind$coord[para1,2],col="blue",cex=1,pch=16)
+points(res.pca$ind$coord[dist1,1],res.pca$ind$coord[dist1,2],col="chocolate1",cex=1,pch=16)
+points(res.pca$ind$coord[para2,1],res.pca$ind$coord[para2,2],col="cyan",cex=1,pch=16)
+points(res.pca$ind$coord[dist2,1],res.pca$ind$coord[dist2,2],col="darkorange1",cex=1,pch=16)
+points(res.pca$ind$coord[para3,1],res.pca$ind$coord[para3,2],col="deepskyblue1",cex=1,pch=16)
+points(res.pca$ind$coord[dist3,1],res.pca$ind$coord[dist3,2],col="darkgoldenrod1",cex=1,pch=16)
+points(res.pca$ind$coord[para4,1],res.pca$ind$coord[para3,2],col="deepskyblue1",cex=1,pch=16)
+points(res.pca$ind$coord[dist4,1],res.pca$ind$coord[dist3,2],col="darkgoldenrod1",cex=1,pch=16)
+```
+
+From the grafic we can see the blue points as the para and the yellow ones the dist.
+
+#### Quality of the partition
+
+##### Gain in inertia (%)
+
+```{r}
+((res.hcpc$call$t$within[1]-res.hcpc$call$t$within[3])/res.hcpc$call$t$within[1])*100
+```
+We can see that the quality of this reduction is 59.95%.
+
+So if we wanted more than a 80% we would need 6 clusters, as we can see below.
+
+```{r}
+((res.hcpc$call$t$within[1]-res.hcpc$call$t$within[6])/res.hcpc$call$t$within[1])*100
+```
+
+#### Saving the results in the dataframe
+
+```{r}
+res.hcpc$call$t$inert.gain[1:4]
+df$hcpck<-res.hcpc$data.clust$clust
+```
+Cleaning
+```{r}
+df$nClustKM <- NULL
+remove(dist1, dist2, dist3, para1, para2, para3, res.hcpc)
+```
+
+## CA Analysis
+
+LO HE HECHO SOLO CON PRICE NO SABIA MUY BIEN EL TARGET
+
+```{r}
+summary(df$price)
+```
+
+The groups are going to be from the minimum to the 1st Qtl, 1st Qtl to the Mean, Mean to 3rd Qtl i 3d Qtl to the Maximum:
+
+```{r}
+df$f_price[df$price<=13995] = "[1990,13995]"
+df$f_price[(df$price>13995) & (df$price<=21140)] = "(13995,21140]"
+df$f_price[(df$price>21140) & (df$price<=26000)] = "(21140,26000]"
+df$f_price[(df$price>62995)] = "(26000,62995]"
+df$f_price<-factor(df$f_price)
+table(df$f_price)
+```
+
+HEMOS ELEGIDO TRANSMISSION Y FUEL TYPES NO SE SI ESTA BIEN
+
+```{r}
+tt1<-table(df[,c("transmission", "f_price")]); tt1
+chisq.test(tt1,  simulate.p.value = TRUE)
+```
+
+```{r}
+res.ca1 <- CA(tt1)
+res.ca1$eig
+res.ca1$row$coord
+fviz_eig(res.ca1)
+```
+
+
+```{r}
+tt2<-table(df[,c("fuelType", "f_price")]); tt2
+chisq.test(tt2,  simulate.p.value = TRUE)
+```
+
+```{r}
+res.ca2 <- CA(tt2)
+res.ca2$eig
+res.ca2$row$coord
+fviz_eig(res.ca2)
+```
+
+
+### Eigenvalues and dominant axes
+
+##### Transmission
+
+```{r}
+mean(res.ca1$eig[,1])
+```
+
+##### Fuel Type
+
+
+```{r}
+mean(res.ca2$eig[,1])
+```
+Cleaning
+```{r}
+df$f_price <- NULL
+rm(res.ca1, res.ca2, tt1, tt2)
+```
+
+## MCA Analysis
+
+```{r, warning=FALSE}
+names(df)
+res.mca <- MCA(df[,c(vars_dis)])
+```
+
+
+
+```{r}
+fviz_mca_ind(
+  res.mca,
+  geom=c("point"),
+  col.ind="lightgreen"
+)
+```
+
+### Eigenvalues and dominant axes
+
+```{r}
+res.mca$eig
+mean(res.mca$eig[,1])
+```
+
+We can see how the mean is 0.1667 so we are going to use the X DIMENSION
+
+```{r}
+fviz_screeplot(
+  res.mca, 
+  addlabels=TRUE, 
+  ylim=c(0,15), 
+  barfill="lightgreen", 
+  barcolor="darkgreen",
+  linecolor="orange",
+  title="Representació en cada dimensió"
+)
+```
+
+### Points of view of the individuals
+
+##### Extreme individuals
+
+```{r}
+fviz_mca_ind(
+  res.mca, 
+  geom=c("point"),
+  col.ind="contrib", 
+  gradient.cols=c("lightgreen", "red")
+)
+```
+##### Groups
+
+No se por que variables hacerlo, NO SE SI ESTAN BIEN
+```{r}
+#fviz_mca_ind(res.mca, label="none", habillage="model", palette=c("lightgreen", "red"))
+fviz_mca_ind(res.mca, label="none", habillage="manufacturer", palette=c("lightgreen", "red", "purple", "blue", "yellow"))
+fviz_mca_ind(res.mca, label="none", habillage="year", palette=c("lightgreen", "red"))
+fviz_mca_ind(res.mca, label="none", habillage="transmission", palette=c("lightgreen", "red", "purple", "yellow"))
+```
+
+### Average profile vs Extreme profiles
+
+```{r}
+fviz_mca_var(res.mca, choice="mca.cor", repel=TRUE)
+```
+
+
+### Interpretation of the assosiation of the axes
+
+```{r}
+res.desc <- dimdesc(res.mca, axes = c(1,2))
+```
+
+
+##### Description of the first dimension
+
+```{r}
+res.desc[[1]]
+```
+
+##### Description of the second dimension
+
+```{r}
+res.desc[[2]]
+```
+
+### MCA with supplemetary data
+
+```{r, warning=FALSE}
+res.mca <- MCA(df[,c(vars_dis, vars_res)], quanti.sup = c("price"))
+```
+
+SE VE RARO
+```{r, warning=FALSE}
+res.mca <- MCA(df[,c(vars_con, vars_dis, vars_res)], quanti.sup = c("mileage", "tax"))
+```
+
+#### Description of dimensions
+```{r}
+res.desc <- dimdesc(res.mca, axes = c(1,2))
+```
+
+
+##### Description of the first dimension
+```{r}
+res.desc[[1]]
+```
+
+##### Description of the second dimension
+```{r}
+res.desc[[2]]
+```
+
+Cleaning
+```{r, warning=FALSE}
+rm(res.desc)
+```
+
+## MCA Jerarquic Clustering
+
+EL NUM 4 NO SE SI ESTA BIEN
+
+```{r, warning=FALSE}
+res.hcmc<-HCPC(res.mca,nb.clust=4,order=TRUE)
+```
+
+
+
+### Description of the clusters
+
+ 
+```{r}
+table(res.hcmc$data.clust$clust)
+barplot(summary(res.hcmc$data.clust$clust), col="lightgreen", border="darkgreen", main="Individuals in each cluster")
+```
+
+
+
+### Interpretation of the results of the clasification
+
+#### The description of the cluster for the variables
+
+Below we can see the categorical variables that caracterize the clusters.
+
+```{r}
+names(res.hcmc$desc.var)
+```
+
+We are going to start to do the description per variables with the chi squared test:
+
+```{r}
+res.hcmc$desc.var$test.chi2
+```
+
+
+```{r}
+res.hcmc$desc.var$category[1]
+```
+
+
+```{r}
+res.hcmc$desc.var$quanti.var
+```
+
+
+```{r}
+res.hcmc$desc.var$quanti
+```
+
+### Quality of the participation
+
+##### Gain in inertia
+
+```{r}
+((res.hcmc$call$t$within[1]-res.hcmc$call$t$within[3])/res.hcmc$call$t$within[1])*100
+```
+
+To have a 80% of representation in the clusters we would need 7 clusters.
+
+```{r}
+((res.hcmc$call$t$within[1]-res.hcmc$call$t$within[7])/res.hcmc$call$t$within[1])*100
+```
+
+
+### Parangons and specific individuals for each class
+
+```{r}
+res.hcmc$desc.ind$para
+```
+
+
+```{r}
+res.hcmc$desc.ind$dist
+```
+HA QUEDADO RARO
+
+```{r}
+para1<-which(rownames(res.mca$ind$coord)%in%names(res.hcmc$desc.ind$para[[1]]))
+dist1<-which(rownames(res.mca$ind$coord)%in%names(res.hcmc$desc.ind$dist[[1]]))
+para2<-which(rownames(res.mca$ind$coord)%in%names(res.hcmc$desc.ind$para[[2]]))
+dist2<-which(rownames(res.mca$ind$coord)%in%names(res.hcmc$desc.ind$dist[[2]]))
+para3<-which(rownames(res.mca$ind$coord)%in%names(res.hcmc$desc.ind$para[[3]]))
+dist3<-which(rownames(res.mca$ind$coord)%in%names(res.hcmc$desc.ind$dist[[3]]))
+
+plot(res.mca$ind$coord[,1],res.mca$ind$coord[,2],col="grey50",cex=0.5,pch=16)
+points(res.mca$ind$coord[para1,1],res.mca$ind$coord[para1,2],col="blue",cex=1,pch=16)
+points(res.mca$ind$coord[dist1,1],res.mca$ind$coord[dist1,2],col="chartreuse3",cex=1,pch=16)
+points(res.mca$ind$coord[para2,1],res.mca$ind$coord[para2,2],col="blue",cex=1,pch=16)
+points(res.mca$ind$coord[dist2,1],res.mca$ind$coord[dist2,2],col="darkorchid3",cex=1,pch=16)
+points(res.mca$ind$coord[para3,1],res.mca$ind$coord[para3,2],col="blue",cex=1,pch=16)
+points(res.mca$ind$coord[dist3,1],res.mca$ind$coord[dist3,2],col="firebrick3",cex=1,pch=16)
+```
+
+```{r, warning=FALSE}
+fviz_dend(res.hcmc, show_labels = FALSE)
+```
+
+```{r, warning=FALSE}
+fviz_cluster(res.hcmc, geom = "point", main = "Factor map")
+```
+
+
+### Comparation clusters with focus a target duration
+
+```{r}
+df$hcmck<-res.hcmc$data.clust$clust
+
+table(df$hcpck,df$hcmck)
+
+```
+```{r}
+df$hcmck_hcpck<-factor(
+  df$hcmck,
+  levels=c(4,3,2,1,5),
+  labels=c("kHPmca-4","kHPmca-3","kHPmca-2","kHPmca-1","kHPmca-5")
+)
+tt1<-table(df$hcpck,df$hcmck_hcpck); tt1
+```
+
+```{r}
+100*sum(diag(tt1)/sum(tt1))
+```
+
+Cleaning
+```{r}
+rm(dist1, dist2, dist3, para1, para2, para3, tt1)
+rm(res.hcmc, res.pca, res.mca, vars_con, vars_dis, vars_res)
+df$hcpck <- NULL
+df$hcmck <- NULL
+df$hcmck_hcpck <- NULL
+```
+
+
+
+## Final
+
+We export the dataframe in .RData format so that we can continue working with it in Deliverable 3.
+
+```{r}
+save(df, file = "Cars_Data_Del2.RData")
+```
