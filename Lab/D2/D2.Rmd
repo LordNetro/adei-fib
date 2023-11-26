@@ -6,6 +6,12 @@ output:
   pdf_document: default
 date: '2023-11-15'
 ---
+##introducction
+This project builds upon the insights gained in the first deliverable, where we initially explored the dataset, identified key variables, and performed exploratory data analysis. In Deliverable 2, our focus shifts towards advanced statistical methods and machine learning techniques to extract deeper insights from the data. Our goal is to uncover patterns, relationships, and groupings within the dataset that go beyond basic descriptive statistics.
+
+Key methodologies employed in this deliverable include Principal Component Analysis (PCA), K-Means Classification, Hierarchical Clustering, Multiple Correspondence Analysis (MCA), and their variations. These techniques enable us to uncover latent structures, classify vehicles based on various attributes, and identify influential factors that contribute to the variability in the dataset.
+
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
@@ -21,9 +27,10 @@ package.check <- lapply(requiredPackages, FUN = function(x) {
     library(x, character.only = TRUE)
   }
 })
+
 rm(package.check, requiredPackages)
 ```
-
+ 
 ## Defining the working directory
 
 We are going to charge the result of the first deliverable, so we can continue working on it without losing our work.
@@ -40,6 +47,8 @@ summary(df$transmission)
 
 # PCA Analysis
 
+In this section, we will delve deeper into the results of Principal Component Analysis (PCA) to provide a more comprehensive understanding. PCA is a powerful tool that helps us reduce the dimensionality of the dataset and reveal underlying patterns
+
 ```{r}
 vars_dis <- c("year", "transmission", "mpg", "model", "manufacturer", "fuelType")
 vars_con <- c("mileage", "tax")
@@ -47,7 +56,7 @@ vars_res <- c("price", "engineSize")
 
 res.pca <- PCA(df[,vars_con])
 ```
-Thanks to the PCA we can see how milage and tax are very inverse correlated. Then we can say that when the tax increases the mileage is going to decrease. FALTA EXPLICACION
+Thanks to PCA, we can observe how mileage and tax are inversely correlated. When tax increases, mileage tends to decrease.
 
 ## Analysis of the Eigenvalues and the dominant axes
 
@@ -94,7 +103,7 @@ With this rule we can see how the difference between the percentages is 23.4%. W
 fviz_pca_ind(res.pca, col.ind="contrib", geom = "point") +
   scale_color_gradient2(mid="lightgreen", high="red")
 ```
-With the plot above we can see how some of the individuals in this two dimensions have a very contributed values, we can see it with the red points.  
+In the plot above, red points indicate individuals with high contributions. We observe that certain individuals stand out in both dimensions, suggesting they have a significant impact on the results.  
 
 #### First Dimension
 
@@ -204,6 +213,8 @@ fviz_contrib(  ## contributions of variables to PC1
 res.des$Dim.2
 ```
 
+The analysis reveals that both the first and second dimensions capture significant variability in the data, with variables contributing substantially to each dimension. The bars reaching 50 in the contribution plots indicate the importance of variables in explaining the respective dimension's variability. 
+
 
 ### PCA with supplementary variables
 
@@ -277,8 +288,6 @@ res.cat <-catdes(df,ncol(df))
 
 ##### Categorical variables
 
-FALTA EXPLICACIÓN
-
 We will explain the results by looking at each cluster by variable. We will start with the categorical ones.
 
 ###### Cluster 1
@@ -286,32 +295,36 @@ We will explain the results by looking at each cluster by variable. We will star
 ```{r}
 res.cat$category[1]
 ```
-
+The analysis of cluster 1 reveals significant patterns in various variables, with key observations as follows. Firstly, vehicles with Semi-Automatic transmission feature prominently, accounting for 82.21%, and this characteristic is highly distinctive compared to other clusters, supported by a very low p-value of 5.42e-62. Additionally, models such as T-Roc, X2, T-Cross, Arteon, and Sharan show a 100% presence, indicating an exclusive association of these models with cluster 1. Regarding fuel type, Petrol vehicles have a significant representation of 77.34%. The brands Mercedes and BMW also exhibit a prominent association with this cluster, with percentages of 71.89% and 71.52%, respectively. 
 
 ###### Cluster 2
 
 ```{r}
 res.cat$category[2]
 ```
-
+Cluster 2 exhibits distinct patterns in categorical variables. Notably, vehicles with Manual transmission predominate the cluster at 45.94%, indicating a strong preference for manual gear shifting. Diesel fuel type is also prevalent, constituting 37.89% of the vehicles in the cluster. Specific models such as A1, Polo, Passat, and Golf are prominently represented, suggesting a preference for these models within the cluster. Intriguingly, certain models like Q8, Caddy Maxi Life, Sharan, and Arteon show a complete absence in this cluster. The association with manufacturers VW, BMW, and Mercedes is noteworthy, with percentages of 34.92%, 28.48%, and 28.11%, respectively, suggesting a clustering effect based on brands.
 
 ##### Quantitaive variables
 
 ```{r}
 res.cat$quanti.var
 ```
+The analysis of quantitative variables reveals strong associations between the cluster structure and key features such as year of manufacture, price, mileage, tax, and MPG, with all exhibiting highly significant associations. Even the weakest predictor, engine size, shows a statistically significant relationship. These findings emphasize the pivotal role of these quantitative attributes in shaping the identified clusters, providing valuable insights into the underlying patterns in the data.
+
 
 ###### Cluster 1
 
 ```{r}
 res.cat$quanti[1]
 ```
-
+Cluster 1, as analyzed through quantitative variables, exhibits significant differences in several key aspects. The v-tests reveal substantial variations in the mean values of the variables. Notably, vehicles in Cluster 1 have a higher average year of manufacture (2018.20), lower tax rates (147.07), and a higher average price (24521.86) compared to the overall dataset. The engine size is slightly larger (1.90), while the MPG is lower (49.57), and the mileage is notably lower (12466.33). These differences are statistically significant, as indicated by the low p-values, emphasizing the distinct characteristics of vehicles in Cluster 1. 
 ###### Cluster 2
 
 ```{r}
 res.cat$quanti[2]
 ```
+
+Cluster 2, when analyzed based on quantitative variables, reveals distinctive patterns. The v-tests indicate significant differences in the mean values of the variables for this cluster. Vehicles in Cluster 2 have higher mileage (44456.09) and lower average MPG (59.83) compared to the overall dataset. Additionally, the engine size is slightly smaller (1.84), the average price is lower (13856.22), tax rates are higher (74.84), and the average year of manufacture is earlier (2015.23). These differences are statistically significant, as evidenced by the low p-values. 
 
 
 ## Hierarchical Clustering
@@ -453,7 +466,7 @@ remove(dist1, dist2, dist3, para1, para2, para3, res.hcpc)
 
 ## CA Analysis
 
-LO HE HECHO SOLO CON PRICE NO SABIA MUY BIEN EL TARGET
+In our PCA analysis, while the primary focus has been on the variable "price," we have enriched our exploration by comparing it with categorical variables, specifically "transmission" and "fuel type." By incorporating these categorical features alongside the quantitative measure of "price," we aim to capture nuanced relationships and potential patterns that may emerge when considering both the cost aspect and the transmission and fuel type characteristics of the vehicles. Through Principal Component Analysis, we aim to distill the essential dimensions that drive the dataset's variability and gain valuable insights into its underlying structure.
 
 ```{r}
 summary(df$price)
@@ -469,8 +482,6 @@ df$f_price[(df$price>62995)] = "(26000,62995]"
 df$f_price<-factor(df$f_price)
 table(df$f_price)
 ```
-
-HEMOS ELEGIDO TRANSMISSION Y FUEL TYPES NO SE SI ESTA BIEN
 
 ```{r}
 tt1<-table(df[,c("transmission", "f_price")]); tt1
