@@ -1,9 +1,9 @@
 ---
 title: "D2"
 output:
-  word_document: default
-  html_document: default
   pdf_document: default
+  html_document: default
+  word_document: default
 date: '2023-11-15'
 ---
 ##introducction
@@ -20,7 +20,8 @@ knitr::opts_chunk$set(echo = TRUE)
 ## Loading the packages
 
 ```{r echo = T, results = 'hide', message=FALSE, error=FALSE, warning=FALSE}
-requiredPackages <- c("missMDA","chemometrics","mvoutlier","effects","FactoMineR","car", "factoextra","RColorBrewer","dplyr","ggmap","ggthemes","knitr")
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+requiredPackages <- c("missMDA","chemometrics","mvoutlier","effects","FactoMineR","car", "factoextra","RColorBrewer","dplyr","ggmap","ggthemes","knitr", "viridis", "ggsci")
 package.check <- lapply(requiredPackages, FUN = function(x) {
   if (!require(x, character.only = TRUE)) {
     install.packages(x, dependencies = TRUE)
@@ -572,21 +573,31 @@ fviz_screeplot(
 ##### Extreme individuals
 
 ```{r}
+library(factoextra)
+library(viridis)
+
 fviz_mca_ind(
-  res.mca, 
-  geom=c("point"),
-  col.ind="contrib", 
-  gradient.cols=c("lightgreen", "red")
+  res.mca,
+  geom = "point", 
+  col.ind = "contrib", # Color by contribution to MCA dimensions
+  gradient.cols = viridis(100) # Use the viridis color palette for continuous data
 )
 ```
+
 ##### Groups
 
-No se por que variables hacerlo, NO SE SI ESTAN BIEN
+On this case, we are going to do the analysis with the manufacturer, year and transmission variables, as we want to see how they affect the data.
 ```{r}
-#fviz_mca_ind(res.mca, label="none", habillage="model", palette=c("lightgreen", "red"))
-fviz_mca_ind(res.mca, label="none", habillage="manufacturer", palette=c("lightgreen", "red", "purple", "blue", "yellow"))
-fviz_mca_ind(res.mca, label="none", habillage="year", palette=c("lightgreen", "red"))
-fviz_mca_ind(res.mca, label="none", habillage="transmission", palette=c("lightgreen", "red", "purple", "yellow"))
+library(factoextra)
+
+n_colors_needed <- 21  # Number of levels in your factor
+custom_palette <- colorRampPalette(c("lightgreen", "red", "purple", "blue", "yellow"))(n_colors_needed)
+
+fviz_mca_ind(res.mca, label = "none", habillage = "manufacturer", palette = custom_palette)
+fviz_mca_ind(res.mca, label = "none", habillage = "year", palette = custom_palette)
+fviz_mca_ind(res.mca, label = "none", habillage = "transmission", palette = custom_palette)
+
+
 ```
 
 ### Average profile vs Extreme profiles
@@ -621,7 +632,6 @@ res.desc[[2]]
 res.mca <- MCA(df[,c(vars_dis, vars_res)], quanti.sup = c("price"))
 ```
 
-SE VE RARO
 ```{r, warning=FALSE}
 res.mca <- MCA(df[,c(vars_con, vars_dis, vars_res)], quanti.sup = c("mileage", "tax"))
 ```
@@ -649,10 +659,10 @@ rm(res.desc)
 
 ## MCA Jerarquic Clustering
 
-EL NUM 4 NO SE SI ESTA BIEN
+We have choosen 3 clusters as we are working with 3 groups, and we want to see the results for 3 clusters.
 
 ```{r, warning=FALSE}
-res.hcmc<-HCPC(res.mca,nb.clust=4,order=TRUE)
+res.hcmc<-HCPC(res.mca,nb.clust=3,order=TRUE)
 ```
 
 
@@ -723,7 +733,6 @@ res.hcmc$desc.ind$para
 ```{r}
 res.hcmc$desc.ind$dist
 ```
-HA QUEDADO RARO
 
 ```{r}
 para1<-which(rownames(res.mca$ind$coord)%in%names(res.hcmc$desc.ind$para[[1]]))
@@ -781,12 +790,24 @@ df$hcmck <- NULL
 df$hcmck_hcpck <- NULL
 ```
 
+## Conclusions
 
+Throughout Deliverable 2, we have employed advanced statistical techniques to further analyze the dataset introduced in our first deliverable. Employing Principal Component Analysis (PCA), we discerned inverse correlations between mileage and tax, highlighting an important aspect of our dataset. The Eigenvalues and Scree plots informed our decision to retain the first dimension in PCA due to its significant contribution to variance.
 
-## Final
+In our exploration of extreme individuals, we identified specific vehicles that significantly influence our PCA results, providing deeper insights into the dataset. Our analysis did not detect multivariate outliers, suggesting that the extreme values identified are plausible within the context of the data.
 
-We export the dataframe in .RData format so that we can continue working with it in Deliverable 3.
+The axes interpretation segment revealed the substantial impact of categorical variables on the dataset's structure. Subsequently, the inclusion of supplementary variables in our PCA brought forth enriched perspectives, although some visualizations appeared unconventional.
+
+The Hierarchical Clustering on Principal Components (HCPC) allowed us to delineate four distinct clusters, offering a nuanced understanding of the dataset's segmentation. The interpretation of these clusters highlighted significant differences in vehicle characteristics such as mileage, tax, price, engine size, and year of manufacture.
+
+For MCA, we chose to visualize the association of manufacturer, year, and transmission with the data points, giving us a clear view of how these variables segment the dataset. The hierarchical clustering within MCA identified three clusters, which, upon evaluation, did not meet the 80% representation threshold, suggesting the need for additional clusters.
+
+The final part of the deliverable involved comparing the clusters from PCA and MCA with a focus on a target duration, illustrating the degree of alignment between these classifications. The process culminated in the export of the refined dataset for subsequent analysis in Deliverable 3.
+
+This deliverable has significantly advanced our understanding of the dataset, setting the stage for even deeper analyses that will be undertaken in Deliverable 3.
 
 ```{r}
 save(df, file = "Cars_Data_Del2.RData")
-```
+``` 
+
+With Deliverable 2 completed, we now possess a robust foundation for the continuation of our work, having solidified our grasp of the dataset's underlying patterns and relationships. The methodologies applied have equipped us with actionable insights, enabling a more informed approach to our next deliverable.
