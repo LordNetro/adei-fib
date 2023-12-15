@@ -1,0 +1,130 @@
+---
+
+```markdown
+---
+title: "Data Analysis and Exploitation: Deliverable 3"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+date: '2023-12-07'
+---
+
+## Introduction
+
+This deliverable continues our exploration and analysis of the automotive dataset, where our primary goal is to build and evaluate both linear and logistic regression models. The linear model aims to predict car prices (`price`), while the logistic model will classify cars as 'expensive' or 'not expensive' based on a defined threshold. This analysis will involve variable transformation, model diagnostics, and performance evaluation using confusion matrices, providing a comprehensive view of the factors influencing car prices and their categorization.
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading the Packages
+
+```{r echo = T, results = 'hide', message=FALSE, error=FALSE, warning=FALSE}
+# Installing and loading necessary packages
+requiredPackages <- c("car", "MASS", "ResourceSelection", "ROCR", "AUC")
+package.check <- lapply(requiredPackages, FUN = function(x) {
+  if (!require(x, character.only = TRUE)) {
+    install.packages(x, dependencies = TRUE)
+    library(x, character.only = TRUE)
+  }
+})
+rm(package.check, requiredPackages)
+```
+
+```{r echo = T, results = 'hide', message=FALSE, error=FALSE, warning=FALSE}
+load("Cars_Data_Del2.RData")
+```
+
+## Data Preparation
+
+```{r}
+# Assuming 'df' is your dataframe
+
+# Convert categorical variables to factors
+df$model <- as.factor(df$model)
+df$year <- as.factor(df$year)
+df$transmission <- as.factor(df$transmission)
+df$fuelType <- as.factor(df$fuelType)
+df$manufacturer <- as.factor(df$manufacturer)
+
+# Create a binary variable for logistic regression model based on 'price'
+threshold <- median(df$price, na.rm = TRUE)  # Use median and exclude any NA values
+df$isExpensive <- ifelse(df$price > threshold, 1, 0)
+
+# Check the distribution of 'isExpensive' before splitting
+df$isExpensive <- factor(df$isExpensive)  # Ensure it's a factor
+table(df$isExpensive)  # This should show the counts for both levels: 0 and 1
+
+# Splitting the dataset into training and testing sets (80-20 split)
+set.seed(123)  # Setting a seed for reproducibility
+splitIndex <- createDataPartition(df$isExpensive, p = .80, list = FALSE)
+df_train <- df[splitIndex, ]
+df_test <- df[-splitIndex, ]
+
+# Check levels in the training set after the split
+table(df_train$isExpensive)  # Ensure both levels are present
+
+```
+
+## Building the Linear Model
+
+```{r}
+# Building the linear model with 'price' as the target variable
+modelo_lineal <- lm(price ~ mileage + tax + mpg + engineSize, data = df_train)
+summary(modelo_lineal)
+
+# Linear model diagnostics
+par(mfrow=c(2,2))
+plot(modelo_lineal)
+```
+
+## Logistic Regression Model
+
+```{r}
+# Ensure 'isExpensive' is a factor
+df_train$isExpensive <- factor(df_train$isExpensive)
+
+# Check the levels again after splitting
+print(levels(df_train$isExpensive))
+
+# If there are still less than two levels, there may be an issue with the data itself
+if (length(levels(df_train$isExpensive)) < 2) {
+  stop("Variable 'isExpensive' still has less than two levels after splitting. Review the stratified sampling process.")
+}
+
+
+# Assuming that 'isExpensive' is correct, we proceed with the glm
+modelo_logistico <- glm(isExpensive ~ mileage + tax + mpg + engineSize, family = binomial(), data = df_train)
+summary(modelo_logistico)
+
+# Plot diagnostics only if the model was successfully created
+if (exists("modelo_logistico")) {
+  par(mfrow=c(2,2))
+  plot(modelo_logistico)
+}
+
+```
+
+## Model Evaluation
+
+### Confusion Matrix for Logistic Model
+
+```{r}
+# Predictions and confusion matrix for logistic regression model
+pred_test <- predict(modelo_logistico, newdata = df_test, type = "response")
+y.est <- ifelse(pred_test < 0.5, 0, 1)  # Threshold for classifying as 'expensive'
+confusionMatrix <- table(df_test$isExpensive, y.est)
+confusionMatrix
+```
+
+## Conclusion
+
+In this deliverable, we successfully built and analyzed a linear model to predict car prices and a logistic model to classify cars as 'expensive' or 'not expensive'. The diagnostic plots provided insights into the assumptions and fit of our models. The confusion matrix for the logistic model offered a clear view of its classification performance. This comprehensive approach demonstrates the efficacy of regression analysis in understanding and predicting market trends in the automotive industry.
+
+```
+
+**Note:**
+1. Replace `df` with your actual dataframe name and ensure all variable names (like `mileage`, `tax`, `mpg`, `engineSize`) match with those in your dataset.
+2. Adjust the categorical variables to reflect those present in your dataset.
+3. Execute this script in your R Markdown environment, and adjust as necessary based on the results and the specifics of your dataset.

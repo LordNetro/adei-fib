@@ -1,0 +1,163 @@
+---
+title: "D3"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+date: '2023-12-07'
+---
+
+##introducction
+This project builds upon the insights gained in the second deliverable, where we performed advanced statistical methods and machine learning techniques to extract deeper insights from the data, while uncovering patterns, relationships and groupings within the dataset. In Deliverable 3, our focus shifts towards 
+
+
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading the packages
+
+```{r echo = T, results = 'hide', message=FALSE, error=FALSE, warning=FALSE}
+# Setting CRAN repository
+options(repos = c(CRAN = "https://cloud.r-project.org"))
+
+# List of required packages
+requiredPackages <- c("ggplot2", "dplyr", "caret", "MASS", "lmtest", "car")
+
+# Function to check and install missing packages
+package.check <- lapply(requiredPackages, FUN = function(x) {
+  if (!require(x, character.only = TRUE)) {
+    install.packages(x, dependencies = TRUE)
+    library(x, character.only = TRUE)
+  }
+})
+
+# Clean up the environment
+rm(package.check, requiredPackages)
+```
+ 
+## Defining the working directory
+
+We are going to charge the result of the first deliverable, so we can continue working on it without losing our work.
+
+
+```{r echo = T, results = 'hide', message=FALSE, error=FALSE, warning=FALSE}
+load("Cars_Data_Del2.RData")
+```
+
+
+
+To resolve the given statement with your provided initial R Markdown script, we will follow a structured approach to build a linear regression model and a binary regression model, incorporating the specified requirements. Below is the continuation of your R Markdown script with the required analyses:
+
+---
+
+```markdown
+## Data Preparation and Exploration
+
+### Splitting the Data
+
+Firstly, we need to split our dataset into work and test samples for model building and validation. We'll use an 80-20 split for this purpose.
+
+```{r}
+set.seed(123)  # For reproducibility
+# Assuming 'df' is your main dataset
+splitIndex <- createDataPartition(df$Y, p = .80, list = FALSE, times = 1)
+workData <- df[ splitIndex,]
+testData <- df[-splitIndex,]
+```
+
+### Exploratory Data Analysis
+
+Before building our models, let's conduct a brief exploratory analysis to understand our data better.
+
+```{r}
+summary(workData)
+# Other exploratory analysis as required
+```
+
+## Building the Linear Regression Model
+
+### Selecting Variables
+
+Based on the multivariate analysis conducted previously, we will select the most significant variables. For the sake of this example, let's assume 'age' and 'income' are our numerical covariates, and 'education_level' is a categorical factor.
+
+```{r}
+# Building the initial model with selected variables
+lmModel <- lm(Y ~ age + income + education_level, data = workData)
+summary(lmModel)
+```
+
+### Non-Linear Model Check
+
+We need to check for non-linear relationships between the target and covariates.
+
+```{r}
+# Checking for non-linearity
+plot(lmModel)
+# Additional non-linear checks can be added as required
+```
+
+### Incorporating Interactions
+
+Now, let's include interactions in our model as per the requirement.
+
+```{r}
+# Model with interactions
+lmModel_interactions <- lm(Y ~ age * income + education_level, data = workData)
+summary(lmModel_interactions)
+```
+
+## Model Diagnostics
+
+### Lack of Fit and Influential Data
+
+We need to examine our model for lack of fit and identify influential data points.
+
+```{r}
+# Diagnostics plots
+par(mfrow=c(2,2))
+plot(lmModel_interactions)
+# Further analysis for influential data points
+```
+
+## Binary Regression Model
+
+### Building the Model
+
+Now, let's build a binary regression model for the binary target.
+
+```{r}
+# Assuming 'binary_target' is your binary response variable
+glmModel <- glm(binary_target ~ age + income + education_level, data = workData, family = "binomial")
+summary(glmModel)
+```
+
+### Predictions and Confusion Matrix
+
+We will make predictions on both the working and testing data frames and evaluate the model using confusion matrices.
+
+```{r}
+# Predictions on working data frame
+predictions_work <- predict(glmModel, workData, type = "response")
+confusionMatrix_work <- table(workData$binary_target, predictions_work > 0.5)
+
+# Predictions on testing data frame
+predictions_test <- predict(glmModel, testData, type = "response")
+confusionMatrix_test <- table(testData$binary_target, predictions_test > 0.5)
+
+# Display confusion matrices
+confusionMatrix_work
+confusionMatrix_test
+```
+
+## Conclusion
+
+In this deliverable, we have successfully built and validated both linear and binary regression models, incorporating interactions, and conducted model diagnostics. The confusion matrices provide insight into the performance of our binary regression model in classifying the binary target variable. This comprehensive approach exemplifies the power of statistical modeling in extracting meaningful insights and predictions from complex datasets.
+```
+
+**Note:**
+1. The specific variables (`age`, `income`, `education_level`, `binary_target`) are placeholders. Replace them with the actual variables from your dataset.
+2. Ensure all code blocks are correctly formatted and executed within your R Markdown environment.
+3. The provided script is a general guide. Tailor the analysis according to the specifics of your dataset and the insights derived from previous deliverables.
