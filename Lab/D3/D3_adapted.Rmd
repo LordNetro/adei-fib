@@ -1,0 +1,171 @@
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r, include=FALSE, echo=FALSE}
+# Load Required Packyears: to be increased over the course
+options(contrasts=c("contr.treatment","contr.treatment"))
+
+requiredPackyears <- c("chemometrics","FactoMineR","car", "factoextra","knitr","missMDA")
+
+#use this function to check if each packyear is on the local machine
+#if a packyear is installed, it will be loaded
+#if any are not, the missing packyear(s) will be installed and loaded
+packyear.check <- lapply(requiredPackyears, FUN = function(x) {
+  if (!require(x, character.only = TRUE)) {
+    install.packyears(x, dependencies = TRUE)
+    library(x, character.only = TRUE)
+  }
+})
+```
+
+```{r echo = T, results = 'hide', messyear=FALSE, error=FALSE, warning=FALSE}
+load("Cars_Data_Del2.RData")
+
+# Eliminate rows with NA
+df <- na.omit(df)
+```
+
+```{r}
+#A. SCRIPT R-MARKDOWN MODELO LINEAL 
+str(df)
+
+df$price <- as.numeric(df$price)
+
+df$year <- as.numeric(df$year)
+df$mpg <- as.numeric(df$mpg)
+df$mileage <- as.numeric(df$mileage)
+df$engineSize <- as.numeric(df$engineSize)
+
+# Create a binary variable for logistic regression model based on 'price'
+threshold <- median(df$price, na.rm = TRUE)  # Use median and exclude any NA values
+df$y <- ifelse(df$price > threshold, 1, 0)
+df$y <- as.factor(df$y)
+
+df$model <- as.factor(df$model)
+df$transmission <- as.factor(df$transmission)
+df$fuelType <- as.factor(df$fuelType)
+df$manufacturer <- as.factor(df$manufacturer)
+```
+
+```{r}
+modelo_1<- lm(price ~ mpg + year + engineSize + mileage, data = df)
+summary(modelo_1)
+
+vif(modelo_1)
+par(mfrow=c(2,2))
+plot(modelo_1,id.n=0)
+avPlots(modelo_1,id=list(method=cooks.distance(modelo_1),n=5))
+```
+
+```{r}
+library(MASS)
+par(mfrow=c(1,1))
+boxcox(price~mpg+year+engineSize+mileage, data =df)
+
+modelo_2<- lm(log(price) ~ mpg + year + engineSize + mileage, data = df)
+summary(modelo_2)
+
+par(mfrow=c(2,2))
+plot(modelo_2,id.n=0)
+marginalModelPlots(modelo_2)
+```
+
+```{r}
+modelo_3 <- lm(log(price) ~ model + transmission + fuelType + y + manufacturer, data = df)
+summary(modelo_3)
+par(mfrow=c(2,2))
+plot(modelo_3,id.n=0)
+marginalModelPlots(modelo_3)
+```
+
+```{r}
+modelo_4 <- lm(log(price) ~ model + transmission + fuelType + y + manufacturer + mpg + year + engineSize + mileage, data = df)
+summary(modelo_4)
+par(mfrow=c(2,2))
+plot(modelo_4,id.n=0)
+marginalModelPlots(modelo_4)
+
+plot(df$price~df$mpg)
+plot(df$price~df$year)
+plot(df$price~df$engineSize)
+plot(df$price~df$mileage)
+
+
+plot(df$price~df$model)
+plot(df$price~df$transmission)
+plot(df$price~df$fuelType)
+plot(df$price~df$manufacturer)
+plot(df$price~df$y)
+
+modelo <- lm(price ~ model, data = df)
+anova(modelo)
+modelo <- lm(price ~ transmission, data = df)
+anova(modelo)
+modelo <- lm(price ~ fuelType, data = df)
+anova(modelo)
+```
+
+```{r}
+modelo_5 <- lm(log(price) ~ fuelType + mpg + year + engineSize, data = df)
+summary(modelo_5)
+par(mfrow=c(2,2))
+plot(modelo_5,id.n=0)
+marginalModelPlots(modelo_5)
+
+modelo_6 <- lm(price ~ mileage * model * transmission, data = df)
+summary(modelo_6)
+
+# Obteniendo el número de parámetros (p) del modelo
+p <- as.numeric(length(coef(modelo_5)))
+
+# 'n' será el número total de observaciones en el dataframe
+n <- as.numeric(nrow(df))
+
+# Calculando el valor de corte (h_param)
+h_param <- as.numeric(2 * (p / nrow(df)))
+
+ll_priori_influential <- which(abs(hatvalues(modelo_5))>h_param*(p/n))
+length(ll_priori_influential)
+
+ll_posteriori_influential <- which(abs(cooks.distance(modelo_5))>(4/(n-p)));length(ll_posteriori_influential)
+
+ll_unique_influential<-unique(c(ll_priori_influential,ll_posteriori_influential));length(ll_unique_influential)
+
+modelo_7 <- update(modelo_5,data=df[-ll_posteriori_influential,])
+summary(modelo_7)
+
+residuos <- residuals(modelo_7)
+SSR <- sum(residuos^2)
+SSE <- sum((residuos / sqrt(1 - hatvalues(modelo_7)))^2)
+SST <- sum((residuos - mean(residuos))^2)
+F_statistic <- ((SST - SSR) / (length(residuos) - length(coef(modelo_7)))) / (SSE / (length(residuos) - length(coef(modelo_7)) - df.residual(modelo_7)))
+p_value <- 1 - pf(F_statistic, length(residuos) - length(coef(modelo_7)), length(residuos) - length(coef(modelo_7)) - df.residual(modelo_7))
+print(p_value)
+
+residuos_estandarizados <- rstandard(modelo_7)
+valores_levantados <- hatvalues(modelo_7)
+plot(valores_levantados, residuos_estandarizados, pch = 19, xlab = "Valores Levantados", ylab = "Residuos Estandarizados")
+abline(h = 0, col = "red")
+```
+```{r}
+# MODELO DE REGRESIÓN LOGÍSTICA
+
+# Dividiendo los datos en conjuntos de entrenamiento y prueba
+set.seed(123) # Para reproducibilidad
+llwork <- sample(1:nrow(df), round(0.80 * nrow(df), 0))
+df_train <- df[llwork, ]
+df_test <- df[-llwork, ]
+
+# Modelo de regresión logística con variables categóricas
+mFinal <- glm(formula = y ~ model + transmission + fuelType + manufacturer + engineSize + mileage, family = "binomial", data = df_train)
+summary(mFinal)
+
+# Realizando predicciones en el conjunto de prueba y creando una matriz de confusión
+pred_test <- predict(mFinal, newdata = df_test, type = "response")
+y.est <- ifelse(pred_test < 0.5, "no", "yes")
+tt <- table(y.est, df_test$y)
+tt
+# Calculando la precisión
+100 * sum(diag(tt)) / sum(tt)
+```

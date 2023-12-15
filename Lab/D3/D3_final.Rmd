@@ -1,0 +1,210 @@
+---
+title: "Comprehensive Analysis of Vehicle Data: Linear and Logistic Regression Models"
+author: "Andrea, Carla, Marc"
+date: "`r format(Sys.Date(), '%d %B, %Y')`"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Introduction
+In this analysis, we delve into the complexities of vehicle data with the goal of understanding the intricacies of vehicle pricing and the predictive factors that classify vehicle categories. By employing linear and logistic regression models, we extract meaningful insights and contribute to the strategic decision-making process in the automotive industry.
+
+```{r, include=FALSE, echo=FALSE}
+# Load the required packages, checking and installing any that are missing.
+options(contrasts=c("contr.treatment", "contr.treatment"))
+
+requiredPackages <- c("chemometrics", "FactoMineR", "car", "factoextra", "knitr", "missMDA")
+
+# This function checks if each package is installed on the local machine.
+# If a package is installed, it will be loaded.
+# If any are not installed, the missing package(s) will be installed and then loaded.
+package.check <- lapply(requiredPackages, FUN = function(x) {
+  if (!require(x, character.only = TRUE)) {
+    install.packages(x, dependencies = TRUE)
+    library(x, character.only = TRUE)
+  }
+})
+```
+
+```{r echo = T, results = 'hide', message=FALSE, error=FALSE, warning=FALSE}
+# Load the dataset from a previous deliverable.
+load("Cars_Data_Del2.RData")
+
+# Remove rows containing missing values (NA) to ensure the data is clean.
+df <- na.omit(df)
+```
+
+## Linear Regression Analysis
+
+```{r}
+# Display the structure of the dataframe.
+str(df)
+
+# Convert pricing and other features to numeric types for regression analysis.
+df$price <- as.numeric(df$price)
+df$year <- as.numeric(df$year)
+df$mpg <- as.numeric(df$mpg)
+df$mileage <- as.numeric(df$mileage)
+df$engineSize <- as.numeric(df$engineSize)
+
+# Create a binary target variable for the logistic regression model based on vehicle pricing.
+threshold <- median(df$price, na.rm = TRUE) # Determine the classification threshold.
+df$y <- ifelse(df$price > threshold, 1, 0) # Classify vehicles based on the threshold.
+df$y <- as.factor(df$y) # Convert the binary target variable into a factor.
+
+# Convert model attributes to factors for categorical analysis.
+df$model <- as.factor(df$model)
+df$transmission <- as.factor(df$transmission)
+df$fuelType <- as.factor(df$fuelType)
+df$manufacturer <- as.factor(df$manufacturer)
+```
+
+The initial linear regression models assess the impact of various numerical features on vehicle pricing. The following steps include model fitting, multicollinearity checks, and diagnostic plotting to ensure model accuracy and reliability.
+
+```{r}
+# Fit the initial linear model to predict vehicle pricing.
+model_1 <- lm(price ~ mpg + year + engineSize + mileage, data = df)
+summary(model_1)
+
+# Assess multicollinearity using the Variance Inflation Factor (VIF).
+vif(model_1)
+
+# Diagnostic plots to assess model fit and identify potential outliers or influential points.
+par(mfrow=c(2,2))
+plot(model_1, id.n=0)
+avPlots(model_1, id=list(method=cooks.distance(model_1), n=5))
+```
+
+Subsequent models incorporate transformations and additional variables to refine the analysis. The Box-Cox transformation assesses the need for a data transformation to meet linear model assumptions.
+
+```{r}
+# Load the MASS package for Box-Cox transformation.
+library(MASS)
+
+# Single plot layout for clarity.
+par(mfrow=c(1,1))
+
+# Perform a Box-Cox transformation to determine the optimal transformation for linear model fitting.
+boxcox(price ~ mpg + year + engineSize + mileage, data = df)
+
+# Fit a transformed linear model using the log of the pricing variable.
+model_2 <- lm(log(price) ~ mpg + year + engineSize + mileage, data = df)
+summary(model_2)
+
+# Diagnostic plots for the transformed model to check for assumptions and potential issues.
+par(mfrow=c(2,2))
+plot(model_2, id.n=0)
+marginalModelPlots(model_2)
+```
+
+```{r}
+# Incorporating categorical variables into the regression model to assess their impact on pricing.
+model_3 <- lm(log(price) ~ model + transmission + fuelType + y + manufacturer, data = df)
+summary(model_3)
+
+# Diagnostic plots for the expanded model, including categorical predictors.
+par(mfrow=c(2,2))
+plot(model_3, id.n=0)
+marginalModelPlots(model_3)
+```
+
+```{r}
+# A comprehensive model that integrates both numerical and categorical variables to predict vehicle pricing.
+model_4 <- lm(log(price) ~ model + transmission + fuelType + y + manufacturer + mpg + year + engineSize + mileage, data = df)
+summary(model_4)
+
+# Diagnostic plots for the comprehensive model, checking for overall model fit and individual variable impact.
+par(mfrow=c(2,2))
+plot(model_4, id.n=0)
+marginalModelPlots(model_4)
+
+# Exploratory plots for individual variables against pricing to visualize relationships and trends.
+plot(df$price ~ df$mpg)
+```
+
+```{r}
+# Fit additional linear models, analyzing the log transformation of price against different subsets of predictors.
+model_5 <- lm(log(price) ~ fuelType + mpg + year + engineSize, data = df)
+summary(model_5)
+
+# Diagnostic plots for the model to identify any deviations from model assumptions.
+par(mfrow=c(2,2))
+plot(model_5, id.n=0)
+marginalModelPlots(model_5)
+
+# A complex model including interaction terms to understand the interplay between mileage, model, and transmission.
+model_6 <- lm(price ~ mileage * model * transmission, data = df)
+summary(model_6)
+
+# Calculate the number of parameters (p) in the model and the total number of observations (n) in the dataframe.
+p <- as.numeric(length(coef(model_5)))
+n <- as.numeric(nrow(df))
+
+# Calculate the cutoff value (h_param) for identifying influential data points.
+h_param <- as.numeric(2 * (p / n))
+
+# Identify influential data points based on their leverage and Cook's distance.
+ll_priori_influential <- which(abs(hatvalues(model_5)) > h_param * (p / n))
+length(ll_priori_influential)
+
+ll_posteriori_influential <- which(abs(cooks.distance(model_5)) > (4 / (n - p)))
+length(ll_posteriori_influential)
+
+ll_unique_influential <- unique(c(ll_priori_influential, ll_posteriori_influential))
+length(ll_unique_influential)
+
+# Update the model by excluding influential data points and summarize the refined model.
+model_7 <- update(model_5, data = df[-ll_posteriori_influential, ])
+summary(model_7)
+
+# Calculate residuals and standardized residuals to check for homoscedasticity and other potential issues.
+residuals <- residuals(model_7)
+SSR <- sum(residuals^2)
+SSE <- sum((residuals / sqrt(1 - hatvalues(model_7)))^2)
+SST <- sum((residuals - mean(residuals))^2)
+F_statistic <- ((SST - SSR) / (length(residuals) - length(coef(model_7)))) / (SSE / (length(residuals) - length(coef(model_7)) - df.residual(model_7)))
+p_value <- 1 - pf(F_statistic, length(residuals) - length(coef(model_7)), length(residuals) - length(coef(model_7)) - df.residual(model_7))
+print(p_value)
+
+standarized_residuals <- rstandard(model_7)
+raised_values <- hatvalues(model_7)
+plot(raised_values, standarized_residuals, pch = 19, xlab = "Leverage Values", ylab = "Standardized Residuals")
+abline(h = 0, col = "red")
+```
+
+## Logistic Regression Analysis
+
+Now, we will conduct a logistic regression to classify vehicles based on a binary outcome derived from their price.
+
+```{r}
+# Split the data into training and test sets for the logistic regression.
+set.seed(123) # Ensure reproducibility.
+llwork <- sample(1:nrow(df), round(0.80 * nrow(df), 0))
+df_train <- df[llwork, ]
+df_test <- df[-llwork, ]
+
+# Fit the logistic regression model using both categorical and numerical predictors.
+mFinal <- glm(formula = y ~ model + transmission + fuelType + manufacturer + engineSize + mileage, family = "binomial", data = df_train)
+summary(mFinal)
+
+# Make predictions on the test set and create a confusion matrix to evaluate the model's performance.
+pred_test <- predict(mFinal, newdata = df_test, type = "response")
+y.est <- ifelse(pred_test < 0.5, "no", "yes")
+tt <- table(y.est, df_test$y)
+tt
+
+# Calculate the accuracy of the model from the confusion matrix.
+accuracy <- 100 * sum(diag(tt)) / sum(tt)
+accuracy
+```
+
+## Conclusion
+
+This comprehensive analysis has enabled us to predict vehicle prices and classify vehicles with considerable accuracy. Through linear regression, we have identified key numerical predictors of vehicle pricing, and logistic regression has allowed us to categorize vehicles effectively. These models have provided significant insights and will serve as a solid foundation for further predictive modeling and analysis within the automotive industry.
+```
