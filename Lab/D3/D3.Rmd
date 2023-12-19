@@ -61,6 +61,8 @@ To resolve the given statement with your provided initial R Markdown script, we 
 Firstly, we need to split our dataset into work and test samples for model building and validation. We'll use an 80-20 split for this purpose.
 
 ```{r}
+threshold <- median(df$price)  # Umbral definido como la mediana de 'price'
+df$Y <- ifelse(df$price > threshold, 1, 0)
 set.seed(123)  # For reproducibility
 # Assuming 'df' is your main dataset
 splitIndex <- createDataPartition(df$Y, p = .80, list = FALSE, times = 1)
